@@ -65,5 +65,16 @@ window.PLAIR_CASES = [
       { type: "image", src: "/assets/2nd-chance-2.webp", alt: "Карточка открытого элемента «Данные» в игре 2nd Chance" },
       { type: "image", src: "/assets/2nd-chance-3.webp", alt: "Список достижений игрока в игре 2nd Chance" }
     ]
+  },
+  {
+    id: "marshrut-perestroen",
+    title: "Маршрут перестроен",
+    category: "Web",
+    description: "Игра для промо фильма о путешествии по зимней Якутии.",
+    media: [
+      { type: "image", src: "/assets/marshrut-perestroen-1.webp", alt: "Заставка «Маршрут перестроен» с автомобилем на заснеженной дороге" },
+      { type: "image", src: "/assets/marshrut-perestroen-2.webp", alt: "Экран окончания поездки с пройденным расстоянием в игре «Маршрут перестроен»" },
+      { type: "image", src: "/assets/marshrut-perestroen-3.webp", alt: "Олень на дороге перед автомобилем в игре «Маршрут перестроен»" }
+    ]
   }
 ];
