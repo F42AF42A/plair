@@ -98,8 +98,6 @@
     $('case-description').textContent = entry.description;
     $('case-note').textContent = entry.note || '';
     $('case-note').hidden = !entry.note;
-    $('case-navigation').hidden = cases.length < 2;
-    $('case-counter').textContent = `${pad(caseIndex + 1)} / ${pad(cases.length)}`;
     $('media-counter').textContent = `${pad(caseIndex + 1)} / ${pad(cases.length)}`;
     $('frame-dots').replaceChildren();
     entry.media.forEach((item, i) => {
@@ -117,7 +115,6 @@
   if (stage && cases.length) {
   $('previous-frame').addEventListener('click', () => showCase(caseIndex - 1));
   $('next-frame').addEventListener('click', () => showCase(caseIndex + 1));
-  $('next-case').addEventListener('click', () => showCase(caseIndex + 1));
   stage.addEventListener('keydown', (event) => {
     if (event.target.tagName === 'VIDEO') return;
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
