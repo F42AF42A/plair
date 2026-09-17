@@ -82,7 +82,11 @@
     autoplayTimer = setInterval(() => {
       const video = stage.querySelector('video');
       if (video && !video.paused) return;
-      showMedia(frameIndex + 1);
+      if (frameIndex + 1 >= cases[caseIndex].media.length) {
+        showCase(caseIndex + 1);
+      } else {
+        showMedia(frameIndex + 1);
+      }
     }, AUTOPLAY_MS);
   }
   function showCase(index) {
