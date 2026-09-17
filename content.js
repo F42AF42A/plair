@@ -32,5 +32,16 @@ window.PLAIR_CASES = [
       { type: "image", src: "/assets/polka-chudes-2.webp", alt: "Экран награды с воздушными шарами и подарком в «Полке чудес»" },
       { type: "image", src: "/assets/polka-chudes-3.webp", alt: "Финальный экран со счётом игрока в «Полке чудес»" }
     ]
+  },
+  {
+    id: "naydi-oshibku",
+    title: "Найди ошибку",
+    category: "Web / стенд",
+    description: "Игра на поиск ошибок в интерфейсе для хакатона Почтатеха.",
+    media: [
+      { type: "image", src: "/assets/naydi-oshibku-1.webp", alt: "Интерфейс отслеживания отправления со спрятанными ошибками в игре «Найди ошибку»" },
+      { type: "image", src: "/assets/naydi-oshibku-2.webp", alt: "Экран регистрации участника с маскотом Почтатеха в игре «Найди ошибку»" },
+      { type: "image", src: "/assets/naydi-oshibku-3.webp", alt: "Экран правил игры «Найди ошибку» на хакатоне Почтатеха" }
+    ]
   }
 ];
