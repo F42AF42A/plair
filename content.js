@@ -26,7 +26,7 @@ window.PLAIR_CASES = [
     id: "2nd-chance",
     title: "2nd Chance",
     category: "Mobile",
-    description: "Образовательная игра в жанре «алхимия» в сеттинге постапокалипсиса (500K+ установок).",
+    description: "Образовательная игра в жанре «алхимия» (500K+ установок).",
     media: [
       { type: "image", src: "/assets/2nd-chance-1.webp", alt: "Постапокалиптическая локация для поиска предметов в игре 2nd Chance" },
       { type: "image", src: "/assets/2nd-chance-2.webp", alt: "Карточка открытого элемента «Данные» в игре 2nd Chance" },
