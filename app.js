@@ -90,6 +90,7 @@
     });
     showMedia(0);
   }
+  if (stage && cases.length) {
   $('previous-frame').addEventListener('click', () => showMedia(frameIndex - 1));
   $('next-frame').addEventListener('click', () => showMedia(frameIndex + 1));
   $('next-case').addEventListener('click', () => showCase(caseIndex + 1));
@@ -112,6 +113,7 @@
     if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) showMedia(frameIndex + (dx < 0 ? 1 : -1));
   }, { passive: true });
   stage.addEventListener('touchcancel', () => { touchStart = null; }, { passive: true });
+  }
   $('contact-open').addEventListener('click', () => {
     dialog.showModal();
     document.body.classList.add('dialog-open');
@@ -208,5 +210,5 @@
       submit.textContent = 'Отправить';
     }
   });
-  showCase(0);
+  if (stage && cases.length) showCase(0);
 })();
