@@ -30,7 +30,7 @@
   let touchStart = null;
   let sending = false;
   let autoplayTimer = null;
-  const AUTOPLAY_MS = 4000;
+  const AUTOPLAY_MS = 2000;
   const pad = (number) => String(number).padStart(2, '0');
   const safeMedia = (value) => {
     if (typeof value !== 'string' || !value.trim()) return '';
@@ -70,7 +70,7 @@
     stage.replaceChildren(media);
     stage.closest('.gallery').classList.toggle('video-active', item.type === 'video');
     if (!reduceMotion.matches) media.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'ease-out' });
-    Array.from($('thumbnails').children).forEach((button, i) => button.setAttribute('aria-current', String(i === frameIndex)));
+    Array.from($('frame-dots').children).forEach((button, i) => button.setAttribute('aria-current', String(i === frameIndex)));
   }
   function stopAutoplay() {
     if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; }
@@ -101,26 +101,14 @@
     $('case-navigation').hidden = cases.length < 2;
     $('case-counter').textContent = `${pad(caseIndex + 1)} / ${pad(cases.length)}`;
     $('media-counter').textContent = `${pad(caseIndex + 1)} / ${pad(cases.length)}`;
-    $('thumbnails').replaceChildren();
+    $('frame-dots').replaceChildren();
     entry.media.forEach((item, i) => {
       const button = document.createElement('button');
       button.type = 'button';
-      button.className = 'thumbnail';
+      button.className = 'frame-dot';
       button.setAttribute('aria-label', `${item.type === 'video' ? 'Видео' : 'Кадр'} ${i + 1}: ${item.alt || entry.title}`);
-      const image = document.createElement('img');
-      image.src = safeMedia(item.type === 'video' ? item.poster : item.src);
-      image.alt = '';
-      image.loading = 'lazy';
-      button.append(image);
-      if (item.type === 'video') {
-        const mark = document.createElement('span');
-        mark.className = 'play-mark';
-        mark.setAttribute('aria-hidden', 'true');
-        mark.textContent = '▶';
-        button.append(mark);
-      }
       button.addEventListener('click', () => { showMedia(i); startAutoplay(); });
-      $('thumbnails').append(button);
+      $('frame-dots').append(button);
     });
     $('previous-frame').hidden = $('next-frame').hidden = cases.length < 2;
     showMedia(0);
