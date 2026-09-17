@@ -43,5 +43,16 @@ window.PLAIR_CASES = [
       { type: "image", src: "/assets/naydi-oshibku-2.webp", alt: "Экран регистрации участника с маскотом Почтатеха в игре «Найди ошибку»" },
       { type: "image", src: "/assets/naydi-oshibku-3.webp", alt: "Экран правил игры «Найди ошибку» на хакатоне Почтатеха" }
     ]
+  },
+  {
+    id: "simple-sandbox",
+    title: "Simple Sandbox 3",
+    category: "Mobile",
+    description: "Геймдизайн для мобильной песочницы с 1М+ установок.",
+    media: [
+      { type: "image", src: "/assets/simple-sandbox-1.webp", alt: "Кат-сцена с персонажами и гробом в стилистике Simple Sandbox 3" },
+      { type: "image", src: "/assets/simple-sandbox-2.webp", alt: "Игровой автомобиль на городской улице в Simple Sandbox 3" },
+      { type: "image", src: "/assets/simple-sandbox-3.webp", alt: "Сцена в школьном классе с игровым интерфейсом в Simple Sandbox 3" }
+    ]
   }
 ];
