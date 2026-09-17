@@ -3,12 +3,13 @@
    Video: { type: "video", src: "/assets/name.mp4", poster: "assets/poster.webp", alt: "Video description" }
    Add actual video files before adding video entries. No build is needed. */
 window.PLAIR_CONFIG = {
-  // Set an activated opaque FormSubmit endpoint before enabling delivery.
+  // FormSubmit needs its first-ever submission confirmed by email before it starts
+  // delivering silently — see the note sent alongside this change.
   formService: "formsubmit",
-  formEndpoint: "",
-  formActivated: false,
-  // Alternatively, set an approved business email to open a prefilled email draft.
-  contactEmail: ""
+  formEndpoint: "https://formsubmit.co/fazullin@me.com",
+  formActivated: true,
+  // Fallback used only while formActivated is false.
+  contactEmail: "fazullin@me.com"
 };
 window.PLAIR_CASES = [
   {
