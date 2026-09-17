@@ -18,8 +18,9 @@
         sessionStorage.setItem('plairIntroSeen', '1');
         intro.addEventListener('click', () => intro.classList.add('skip'));
         intro.addEventListener('animationend', (event) => {
-          if (event.animationName === 'intro-fade') intro.remove();
+          if (event.animationName === 'intro-dive') intro.remove();
         });
+        requestAnimationFrame(() => requestAnimationFrame(() => intro.classList.add('intro-play')));
       }
     } catch { intro.classList.add('skip'); }
   }
