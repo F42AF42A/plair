@@ -21,5 +21,16 @@ window.PLAIR_CASES = [
       { type: "image", src: "/assets/t-quest-2.webp", alt: "Экран выбора стихии с командой персонажей в T-Quest" },
       { type: "image", src: "/assets/t-quest-3.webp", alt: "Персонаж-бык Хнум в T-Quest" }
     ]
+  },
+  {
+    id: "polka-chudes",
+    title: "Полка чудес",
+    category: "Web / Mobile",
+    description: "Игра для федеральной сети магазинов.",
+    media: [
+      { type: "image", src: "/assets/polka-chudes-1.webp", alt: "Прыгающий персонаж-медвежонок на игровой локации в «Полке чудес»" },
+      { type: "image", src: "/assets/polka-chudes-2.webp", alt: "Экран награды с воздушными шарами и подарком в «Полке чудес»" },
+      { type: "image", src: "/assets/polka-chudes-3.webp", alt: "Финальный экран со счётом игрока в «Полке чудес»" }
+    ]
   }
 ];
