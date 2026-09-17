@@ -13,6 +13,8 @@
   let frameIndex = 0;
   let touchStart = null;
   let sending = false;
+  let autoplayTimer = null;
+  const AUTOPLAY_MS = 4000;
   const pad = (number) => String(number).padStart(2, '0');
   const safeMedia = (value) => {
     if (typeof value !== 'string' || !value.trim()) return '';
@@ -54,7 +56,19 @@
     if (!reduceMotion.matches) media.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'ease-out' });
     $('media-counter').textContent = `${pad(frameIndex + 1)} / ${pad(entry.media.length)}`;
     Array.from($('thumbnails').children).forEach((button, i) => button.setAttribute('aria-current', String(i === frameIndex)));
-    $('previous-frame').hidden = $('next-frame').hidden = entry.media.length < 2;
+  }
+  function stopAutoplay() {
+    if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; }
+  }
+  function startAutoplay() {
+    stopAutoplay();
+    const entry = cases[caseIndex];
+    if (!entry || entry.media.length < 2 || reduceMotion.matches) return;
+    autoplayTimer = setInterval(() => {
+      const video = stage.querySelector('video');
+      if (video && !video.paused) return;
+      showMedia(frameIndex + 1);
+    }, AUTOPLAY_MS);
   }
   function showCase(index) {
     if (!cases.length) return;
@@ -85,20 +99,22 @@
         mark.textContent = '▶';
         button.append(mark);
       }
-      button.addEventListener('click', () => showMedia(i));
+      button.addEventListener('click', () => { showMedia(i); startAutoplay(); });
       $('thumbnails').append(button);
     });
+    $('previous-frame').hidden = $('next-frame').hidden = cases.length < 2;
     showMedia(0);
+    startAutoplay();
   }
   if (stage && cases.length) {
-  $('previous-frame').addEventListener('click', () => showMedia(frameIndex - 1));
-  $('next-frame').addEventListener('click', () => showMedia(frameIndex + 1));
+  $('previous-frame').addEventListener('click', () => showCase(caseIndex - 1));
+  $('next-frame').addEventListener('click', () => showCase(caseIndex + 1));
   $('next-case').addEventListener('click', () => showCase(caseIndex + 1));
   stage.addEventListener('keydown', (event) => {
     if (event.target.tagName === 'VIDEO') return;
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       event.preventDefault();
-      showMedia(frameIndex + (event.key === 'ArrowLeft' ? -1 : 1));
+      showCase(caseIndex + (event.key === 'ArrowLeft' ? -1 : 1));
     }
   });
   stage.addEventListener('touchstart', (event) => {
@@ -110,9 +126,11 @@
     const dx = event.changedTouches[0].clientX - touchStart.x;
     const dy = event.changedTouches[0].clientY - touchStart.y;
     touchStart = null;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) showMedia(frameIndex + (dx < 0 ? 1 : -1));
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) showCase(caseIndex + (dx < 0 ? 1 : -1));
   }, { passive: true });
   stage.addEventListener('touchcancel', () => { touchStart = null; }, { passive: true });
+  stage.addEventListener('mouseenter', stopAutoplay);
+  stage.addEventListener('mouseleave', startAutoplay);
   }
   $('contact-open').addEventListener('click', () => {
     dialog.showModal();
