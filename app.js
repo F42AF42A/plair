@@ -70,7 +70,6 @@
     stage.replaceChildren(media);
     stage.closest('.gallery').classList.toggle('video-active', item.type === 'video');
     if (!reduceMotion.matches) media.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'ease-out' });
-    $('media-counter').textContent = `${pad(frameIndex + 1)} / ${pad(entry.media.length)}`;
     Array.from($('thumbnails').children).forEach((button, i) => button.setAttribute('aria-current', String(i === frameIndex)));
   }
   function stopAutoplay() {
@@ -97,6 +96,7 @@
     $('case-note').hidden = !entry.note;
     $('case-navigation').hidden = cases.length < 2;
     $('case-counter').textContent = `${pad(caseIndex + 1)} / ${pad(cases.length)}`;
+    $('media-counter').textContent = `${pad(caseIndex + 1)} / ${pad(cases.length)}`;
     $('thumbnails').replaceChildren();
     entry.media.forEach((item, i) => {
       const button = document.createElement('button');
