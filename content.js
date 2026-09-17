@@ -54,5 +54,16 @@ window.PLAIR_CASES = [
       { type: "image", src: "/assets/simple-sandbox-2.webp", alt: "Игровой автомобиль на городской улице в Simple Sandbox 3" },
       { type: "image", src: "/assets/simple-sandbox-3.webp", alt: "Сцена в школьном классе с игровым интерфейсом в Simple Sandbox 3" }
     ]
+  },
+  {
+    id: "2nd-chance",
+    title: "2nd Chance",
+    category: "Mobile",
+    description: "Образовательная игра в жанре «алхимия» в сеттинге постапокалипсиса (500K+ установок).",
+    media: [
+      { type: "image", src: "/assets/2nd-chance-1.webp", alt: "Постапокалиптическая локация для поиска предметов в игре 2nd Chance" },
+      { type: "image", src: "/assets/2nd-chance-2.webp", alt: "Карточка открытого элемента «Данные» в игре 2nd Chance" },
+      { type: "image", src: "/assets/2nd-chance-3.webp", alt: "Список достижений игрока в игре 2nd Chance" }
+    ]
   }
 ];
