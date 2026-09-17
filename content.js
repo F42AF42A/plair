@@ -12,15 +12,14 @@ window.PLAIR_CONFIG = {
 };
 window.PLAIR_CASES = [
   {
-    id: "winter-route-demo",
-    title: "Зимний маршрут",
-    category: "Промоигра · Web",
-    description: "Исследовать мир, находить новое, возвращаться. Игровой формат для знакомства с брендом.",
-    note: "Демонстрационный кейс",
+    id: "t-quest",
+    title: "T-Quest",
+    category: "Web / Mobile",
+    description: "Игра для геймификации HR-активностей Т-банка на конференциях.",
     media: [
-      { type: "image", src: "/assets/winter-route.webp", alt: "Автомобиль на зимней дороге в горах" },
-      { type: "image", src: "/assets/forest-route.webp", alt: "Зимняя дорога через хвойный лес к горному озеру" },
-      { type: "image", src: "/assets/route-aerial.webp", alt: "Вид сверху на извилистую дорогу в заснеженном лесу" }
+      { type: "image", src: "/assets/t-quest-1.webp", alt: "Персонаж и золотистое существо на игровой локации в T-Quest"},
+      { type: "image", src: "/assets/t-quest-2.webp", alt: "Экран выбора стихии с командой персонажей в T-Quest" },
+      { type: "image", src: "/assets/t-quest-3.webp", alt: "Персонаж-бык Хнум в T-Quest" }
     ]
   }
 ];
