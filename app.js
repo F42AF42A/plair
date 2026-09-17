@@ -9,6 +9,20 @@
   const status = $('form-status');
   const submit = $('contact-submit');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+  const intro = $('intro-splash');
+  if (intro) {
+    try {
+      if (reduceMotion.matches || sessionStorage.getItem('plairIntroSeen')) {
+        intro.classList.add('skip');
+      } else {
+        sessionStorage.setItem('plairIntroSeen', '1');
+        intro.addEventListener('click', () => intro.classList.add('skip'));
+        intro.addEventListener('animationend', (event) => {
+          if (event.animationName === 'intro-fade') intro.remove();
+        });
+      }
+    } catch { intro.classList.add('skip'); }
+  }
   let caseIndex = 0;
   let frameIndex = 0;
   let touchStart = null;
