@@ -116,16 +116,18 @@ html[data-input="pointer"] .button.solid:focus-visible:not(:hover){
 .text-link:hover svg,.link:hover svg{transform:translateX(4px)}
 
 /* ── подвал ────────────────────────────────────────────────── */
+/* Верхний отступ подвала отдан холсту: поле частиц начинается прямо от
+   серой линии и доходит до строки со ссылками. */
 .footer{border-top:1px solid var(--line);margin-top:clamp(40px,6vw,90px);
-  padding-block:clamp(34px,4.5vw,64px) 32px}
+  padding-block:0 32px}
 /* Знак собирается из частиц: маска логотипа рисуется в невидимый холст,
    из его пикселей рождаются точки, каждая пружиной держится за своё
    место. Пропорции холста — пропорции знака, иначе он терялся бы
    посреди широкой полосы. */
-.footer-word{display:block;width:100%;height:clamp(140px,21vw,310px);margin:0}
+.footer-word{display:block;width:100%;height:clamp(190px,28vw,410px);margin:0}
 
 .footer-row{display:flex;gap:26px;justify-content:space-between;flex-wrap:wrap;align-items:flex-end;
-  margin-top:clamp(18px,2.4vw,36px)}
+  margin-top:0}
 .footer nav{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
 .footer nav a{display:inline-flex;align-items:center;min-height:44px;transition:color .2s}
 .footer nav a:hover{color:var(--accent)}
