@@ -209,6 +209,108 @@
     });
   }
 
+  const fx = $('hero-fx');
+  const hero = fx && fx.closest('.hero');
+  if (fx && hero) {
+    const ctx2d = fx.getContext('2d', { alpha: true });
+    const ACCENT = '52,199,89';
+    let dots = [], w = 0, h = 0, dpr = 1, link = 130, pointer = null, alive = false, prev = 0;
+
+    function build() {
+      const box = hero.getBoundingClientRect();
+      w = Math.round(box.width); h = Math.round(box.height);
+      if (!w || !h) return;
+      // На экране с плотным пикселем рисуем крупнее и ужимаем стилем,
+      // иначе точки и линии выходят мылом.
+      dpr = Math.min(2, window.devicePixelRatio || 1);
+      fx.width = Math.round(w * dpr); fx.height = Math.round(h * dpr);
+      ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
+      const narrow = w < 700;
+      link = narrow ? 92 : 132;
+      const count = Math.max(narrow ? 18 : 34, Math.min(narrow ? 34 : 88, Math.round(w * h / 15000)));
+      dots = Array.from({ length: count }, () => ({
+        x: Math.random() * w, y: Math.random() * h,
+        vx: (Math.random() - 0.5) * 0.22, vy: (Math.random() - 0.5) * 0.22,
+        r: 0.7 + Math.random() * 1.5, a: 0.25 + Math.random() * 0.45
+      }));
+    }
+
+    function draw(dt) {
+      ctx2d.clearRect(0, 0, w, h);
+      for (const d of dots) {
+        d.x += d.vx * dt; d.y += d.vy * dt;
+        // Уходя за край, точка появляется с противоположного: поле не редеет.
+        if (d.x < -6) d.x = w + 6; else if (d.x > w + 6) d.x = -6;
+        if (d.y < -6) d.y = h + 6; else if (d.y > h + 6) d.y = -6;
+        if (pointer) {
+          const dx = pointer.x - d.x, dy = pointer.y - d.y;
+          const dist = Math.hypot(dx, dy);
+          if (dist < 180 && dist > 1) {
+            d.vx += (dx / dist) * 0.0016 * dt;
+            d.vy += (dy / dist) * 0.0016 * dt;
+          }
+        }
+        // Притяжение к курсору не должно разгонять точки без предела.
+        const speed = Math.hypot(d.vx, d.vy);
+        if (speed > 0.55) { d.vx = d.vx / speed * 0.55; d.vy = d.vy / speed * 0.55; }
+      }
+      ctx2d.lineWidth = 1;
+      for (let i = 0; i < dots.length; i++) {
+        for (let j = i + 1; j < dots.length; j++) {
+          const dist = Math.hypot(dots[i].x - dots[j].x, dots[i].y - dots[j].y);
+          if (dist > link) continue;
+          ctx2d.strokeStyle = `rgba(${ACCENT},${(1 - dist / link) * 0.17})`;
+          ctx2d.beginPath();
+          ctx2d.moveTo(dots[i].x, dots[i].y); ctx2d.lineTo(dots[j].x, dots[j].y); ctx2d.stroke();
+        }
+        if (pointer) {
+          const dist = Math.hypot(pointer.x - dots[i].x, pointer.y - dots[i].y);
+          if (dist < 180) {
+            ctx2d.strokeStyle = `rgba(${ACCENT},${(1 - dist / 180) * 0.3})`;
+            ctx2d.beginPath();
+            ctx2d.moveTo(dots[i].x, dots[i].y); ctx2d.lineTo(pointer.x, pointer.y); ctx2d.stroke();
+          }
+        }
+      }
+      for (const d of dots) {
+        ctx2d.fillStyle = `rgba(${ACCENT},${d.a})`;
+        ctx2d.beginPath(); ctx2d.arc(d.x, d.y, d.r, 0, Math.PI * 2); ctx2d.fill();
+      }
+    }
+
+    function frame(now) {
+      if (!alive) return;
+      // Шаг в кадрах по 60 Гц: на быстром мониторе поле не ускоряется,
+      // а после долгой паузы точки не прыгают через пол-экрана.
+      const dt = Math.min(3, (now - prev) / 16.67);
+      prev = now;
+      draw(dt);
+      requestAnimationFrame(frame);
+    }
+    function run(on) {
+      if (on === alive) return;
+      alive = on;
+      if (on) { prev = performance.now(); requestAnimationFrame(frame); }
+    }
+
+    build();
+    draw(0);
+    if (!reduceMotion.matches) {
+      new IntersectionObserver((entries) => entries.forEach((e) => run(e.isIntersecting)),
+        { threshold: 0 }).observe(hero);
+      hero.addEventListener('pointermove', (event) => {
+        const box = hero.getBoundingClientRect();
+        pointer = { x: event.clientX - box.left, y: event.clientY - box.top };
+      });
+      hero.addEventListener('pointerleave', () => { pointer = null; });
+    }
+    let fxTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(fxTimer);
+      fxTimer = setTimeout(() => { build(); draw(0); }, 160);
+    });
+  }
+
   const ring = $('studio-ring');
   const frame = $('studio-frame');
   if (ring && frame) {
