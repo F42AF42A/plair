@@ -99,19 +99,25 @@
       ${wash ? `<img class="collage-wash" src="${esc(wash)}" alt="" aria-hidden="true">` : ''}${rows}</div>`;
   }
 
-  const holder = $('cases');
+  const track = $('cases');
   const narrowQuery = window.matchMedia('(max-width: 980px)');
-  let stack = [];
+  const dotsBox = $('case-dots');
+  const counter = $('case-count');
+  const prev = $('case-prev');
+  const next = $('case-next');
+  const live = $('case-live');
+  let at = 0;
 
   function renderCases() {
-    if (!holder || !cases.length) return;
+    if (!track || !cases.length) return;
     const narrow = narrowQuery.matches;
-    holder.innerHTML = cases.map((entry, i) => `
-      <section class="case">
-        <article class="case-card" aria-labelledby="case-${i}">
+    track.innerHTML = cases.map((entry, i) => `
+      <section class="case" role="group" aria-roledescription="слайд"
+               aria-label="${i + 1} из ${cases.length}: ${esc(entry.title)}">
+        <article class="case-card">
           <div class="case-text">
             <span class="case-no">${pad(i + 1)} / ${pad(cases.length)}</span>
-            <h3 id="case-${i}">${esc(entry.title)}</h3>
+            <h3>${esc(entry.title)}</h3>
             <p class="case-cat">${esc(entry.category)}</p>
             <p class="case-desc">${esc(entry.description)}</p>
             ${entry.note ? `<p class="case-desc">${esc(entry.note)}</p>` : ''}
@@ -120,28 +126,67 @@
           <div>${collageHTML(entry, narrow)}</div>
         </article>
       </section>`).join('');
-    stack = Array.from(holder.querySelectorAll('.case'));
-    positionStack();
+
+    if (dotsBox && !dotsBox.children.length) {
+      dotsBox.innerHTML = cases.map((entry, i) =>
+        `<button class="dot" type="button" role="tab" data-go="${i}" aria-selected="${i === 0}"
+                 aria-label="Проект ${i + 1}: ${esc(entry.title)}"></button>`).join('');
+      dotsBox.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-go]');
+        if (button) goTo(Number(button.dataset.go));
+      });
+    }
+    watch();
+    goTo(at, 'auto');
   }
 
-  // Чем ближе следующая карточка, тем сильнее уезжает и притемняется текущая.
-  let queued = false;
-  function positionStack() {
-    queued = false;
-    if (!stack.length || narrowQuery.matches || reduceMotion.matches) return;
-    const vh = window.innerHeight, from = vh * 0.92, to = vh * 0.12;
-    stack.forEach((section, i) => {
-      const card = section.querySelector('.case-card');
-      const next = stack[i + 1];
-      if (!next) { card.style.setProperty('--p', 0); return; }
-      const progress = (from - next.getBoundingClientRect().top) / (from - to);
-      card.style.setProperty('--p', Math.max(0, Math.min(1, progress)).toFixed(3));
-    });
+  function goTo(index, behavior) {
+    const slides = track.children;
+    if (!slides.length) return;
+    at = Math.max(0, Math.min(slides.length - 1, index));
+    const slide = slides[at];
+    // Прокручиваем саму ленту, а не страницу: scrollIntoView увёл бы экран вниз.
+    // Смещение считаем от самой ленты — offsetLeft отсчитывается от другого
+    // предка и промахивается мимо слайда на ширину поля страницы.
+    const shift = slide.getBoundingClientRect().left - track.getBoundingClientRect().left;
+    track.scrollTo({ left: track.scrollLeft + shift - (track.clientWidth - slide.clientWidth) / 2,
+                     behavior: behavior || (reduceMotion.matches ? 'auto' : 'smooth') });
+    setActive(at);
   }
-  window.addEventListener('scroll', () => {
-    if (!queued) { queued = true; requestAnimationFrame(positionStack); }
-  }, { passive: true });
-  window.addEventListener('resize', positionStack);
+
+  function setActive(index) {
+    at = index;
+    if (counter) counter.textContent = `${pad(index + 1)} / ${pad(cases.length)}`;
+    if (prev) prev.disabled = index === 0;
+    if (next) next.disabled = index === cases.length - 1;
+    if (dotsBox) Array.from(dotsBox.children).forEach((dot, i) =>
+      dot.setAttribute('aria-selected', String(i === index)));
+    if (live) live.textContent = `Проект ${index + 1} из ${cases.length}: ${cases[index].title}.`;
+  }
+
+  // Активным считаем слайд, который занял больше половины ленты: так индикатор
+  // не врёт при перелистывании пальцем, а не кнопкой.
+  let observer = null;
+  function watch() {
+    if (observer) observer.disconnect();
+    observer = new IntersectionObserver((entries) => {
+      entries.forEach((entry) => {
+        if (entry.isIntersecting && entry.intersectionRatio > 0.55) {
+          setActive(Array.prototype.indexOf.call(track.children, entry.target));
+        }
+      });
+    }, { root: track, threshold: [0.55, 0.9] });
+    Array.from(track.children).forEach((slide) => observer.observe(slide));
+  }
+
+  if (prev) prev.addEventListener('click', () => goTo(at - 1));
+  if (next) next.addEventListener('click', () => goTo(at + 1));
+  if (track) track.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowLeft') { goTo(at - 1); event.preventDefault(); }
+    if (event.key === 'ArrowRight') { goTo(at + 1); event.preventDefault(); }
+    if (event.key === 'Home') { goTo(0); event.preventDefault(); }
+    if (event.key === 'End') { goTo(cases.length - 1); event.preventDefault(); }
+  });
   narrowQuery.addEventListener('change', renderCases);
   renderCases();
 

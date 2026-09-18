@@ -87,17 +87,29 @@
 .collage-row figure{margin:0;flex:var(--ar) 1 0;min-width:0}
 .collage-row img{width:100%;height:auto;border-radius:7px;box-shadow:0 14px 34px rgba(0,0,0,.5)}
 
-/* ── карточки проектов стопкой ─────────────────────────────── */
-.case{padding-bottom:6vh}
-.case-card{position:sticky;top:calc(var(--bar) + 14px);
-  background:linear-gradient(180deg,var(--surface),var(--bg-2));border:1px solid var(--line);
+/* ── карусель проектов ─────────────────────────────────────── */
+/* Раньше кейсы шли стопкой сверху вниз: при семи проектах это уже длинная
+   лента, при пятнадцати — бесконечная. Карусель держит высоту блока
+   постоянной независимо от числа кейсов. */
+.carousel-nav{display:flex;align-items:center;gap:10px;margin-left:auto}
+.carousel-count{font-family:var(--display);font-size:13px;font-weight:600;color:var(--dim);
+  font-variant-numeric:tabular-nums;letter-spacing:.06em;margin:0 6px 0 0}
+.arrow{width:48px;height:48px;border:1px solid var(--line-2);border-radius:50%;background:none;color:var(--ink);
+  display:grid;place-items:center;cursor:pointer;flex:none;
+  transition:border-color .2s,background .2s,color .2s,opacity .2s}
+.arrow svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.7}
+.arrow:hover:not(:disabled){border-color:var(--accent);background:var(--accent);color:var(--on-accent)}
+.arrow:disabled{opacity:.3;cursor:default}
+
+.carousel-track{display:flex;align-items:center;gap:clamp(14px,1.8vw,26px);
+  overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;
+  scrollbar-width:none;-ms-overflow-style:none}
+.carousel-track::-webkit-scrollbar{display:none}
+.carousel-track:focus-visible{outline:2px solid var(--accent);outline-offset:6px;border-radius:var(--radius)}
+.case{flex:0 0 100%;min-width:0;scroll-snap-align:center;scroll-snap-stop:always}
+.case-card{background:linear-gradient(180deg,var(--surface),var(--bg-2));border:1px solid var(--line);
   border-radius:var(--radius);padding:clamp(15px,1.9vw,28px);
-  display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:clamp(15px,2.2vw,34px);
-  transform:scale(calc(1 - .045 * var(--p,0)));transform-origin:50% 0;transition:transform .12s linear;
-  overflow:hidden}
-.case-card::after{content:"";position:absolute;inset:0;background:var(--bg);opacity:calc(.55 * var(--p,0));
-  pointer-events:none;border-radius:inherit}
-.case-card>*{position:relative;z-index:1}
+  display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:clamp(15px,2.2vw,34px)}
 .case-text{display:flex;flex-direction:column;justify-content:center;min-width:0}
 .case-no{font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.14em;color:var(--accent);
   font-variant-numeric:tabular-nums}
@@ -106,6 +118,14 @@
 .case-cat{margin-top:10px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
 .case-desc{color:var(--muted);margin-top:16px;line-height:1.5;max-width:38ch}
 .case-fmt{margin-top:18px;font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums;letter-spacing:.04em}
+
+.carousel-dots{display:flex;justify-content:center;gap:2px;margin-top:14px}
+.dot{width:44px;height:44px;display:grid;place-items:center;background:none;border:0;padding:0;cursor:pointer;
+  border-radius:8px}
+.dot::before{content:"";width:7px;height:7px;border-radius:50%;border:1.5px solid var(--line-2);
+  transition:background .2s,border-color .2s,transform .2s}
+.dot[aria-selected="true"]::before{background:var(--accent);border-color:var(--accent);transform:scale(1.25)}
+.dot:focus-visible{outline:2px solid var(--accent);outline-offset:-6px}
 
 /* ── студия и журнал ───────────────────────────────────────── */
 .studio{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(24px,4vw,72px);align-items:start}
@@ -150,8 +170,7 @@ details p{margin-top:12px}
 @media (max-width:980px){
   .hero-grid{grid-template-columns:1fr}
   .hero-facts{border-left:0;border-top:1px solid var(--line);padding-left:0;padding-top:18px}
-  .case-card{grid-template-columns:1fr;position:static;transform:none}
-  .case-card::after{opacity:0}
+  .case-card{grid-template-columns:1fr}
   .service-card{grid-template-columns:auto minmax(0,1fr) auto;row-gap:7px}
   .service-card p{grid-column:2/-1}
   .studio{grid-template-columns:1fr}
@@ -159,7 +178,6 @@ details p{margin-top:12px}
 @media (prefers-reduced-motion:reduce){
   .ticker-row{animation:none}
   .ticker-stop{display:none}
-  .case-card{position:static;transform:none}
-  .case-card::after{opacity:0}
+  .carousel-track{scroll-behavior:auto}
   .service-card{transition:none}
 }
