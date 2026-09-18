@@ -83,10 +83,13 @@ ul,ol{margin:0}
 .button:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 .button:disabled{opacity:.45;cursor:not-allowed}
 .button.lg{min-height:58px;min-width:152px;font-size:16px;padding:14px 30px}
-.button.solid{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.button.solid{background:var(--accent);border-color:var(--accent);color:var(--on-accent);
+  transition:background .28s ease,color .28s ease}
 .button.solid .blob{display:none}
-.button.solid .f1,.button.solid .f2{color:var(--on-accent)}
-.button.solid:hover,.button.solid:focus-visible{background:var(--accent-deep);border-color:var(--accent-deep)}
+.button.solid .f1,.button.solid .f2{color:inherit;transition:transform .34s cubic-bezier(.4,0,.2,1),opacity .3s}
+/* При наведении кнопка выворачивается наизнанку: тёмная заливка, зелёная
+   надпись, рамка на месте. Зелёный на тёмном держит 8,4:1. */
+.button.solid:hover,.button.solid:focus-visible{background:transparent;color:var(--accent)}
 .button.solid:focus-visible{outline-color:var(--ink)}
 
 .text-link,.link{display:inline-flex;align-items:center;gap:9px;min-height:44px;width:fit-content;
