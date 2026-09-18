@@ -71,11 +71,11 @@ window.PLAIR_CASES = [
     id: "naydi-oshibku",
     title: "Найди ошибку",
     category: "Web / стенд",
-    description: "Игра на поиск ошибок в интерфейсе для хакатона Почтатеха.",
+    description: "Игра на поиск ошибок в интерфейсе для Почтатеха.",
     media: [
       { type: "image", src: "/assets/naydi-oshibku-1.webp", w: 2000, h: 1124, alt: "Интерфейс отслеживания отправления со спрятанными ошибками в игре «Найди ошибку»" },
       { type: "image", src: "/assets/naydi-oshibku-2.webp", w: 2000, h: 1123, alt: "Экран регистрации участника с маскотом Почтатеха в игре «Найди ошибку»" },
-      { type: "image", src: "/assets/naydi-oshibku-3.webp", w: 2000, h: 1125, alt: "Экран правил игры «Найди ошибку» на хакатоне Почтатеха" }
+      { type: "image", src: "/assets/naydi-oshibku-3.webp", w: 2000, h: 1125, alt: "Экран правил игры «Найди ошибку» для Почтатеха" }
     ]
   },
   {

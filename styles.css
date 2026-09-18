@@ -130,6 +130,9 @@ ul,ol{margin:0}
 .field input:focus,.field textarea:focus{outline:none;border-color:var(--accent)}
 .field input[aria-invalid="true"]{border-color:var(--danger)}
 .field-error{color:var(--danger);font-size:13px}
+/* Форма — отдельный поток: без этого кнопка отправки упиралась прямо
+   в нижний край поля «О проекте», вплотную к ручке изменения размера. */
+#contact-form{display:flex;flex-direction:column;gap:clamp(20px,2.4vw,28px)}
 .form-bottom{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
 .form-status{font-size:14px;color:var(--muted);margin:0}
 .form-status.error{color:var(--danger)}
