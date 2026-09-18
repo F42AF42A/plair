@@ -11,8 +11,8 @@
  * Модуль грузится лениво, при первом открытии формы: на остальных
  * страницах three.js не скачивается вовсе.
  */
-import * as THREE from '/assets/three.module.min.js?v=6';
-import { RoundedBoxGeometry } from '/assets/RoundedBoxGeometry.js?v=6';
+import * as THREE from '/assets/three.module.min.js?v=7';
+import { RoundedBoxGeometry } from '/assets/RoundedBoxGeometry.js?v=7';
 
 const ACCENT = 0x34c759;      // наш зелёный вместо #00ffc6
 const SHELL  = 0xc4c4c4;      // цвет корпуса из демо
@@ -35,7 +35,7 @@ export function mount(host) {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
-  camera.position.set(0, 0.15, 11);
+  camera.position.set(0, 0.72, 11);
 
   // Свет держим нейтральным: зелёный в сцене — только свой, из глаз,
   // антенны и индикатора. Иначе корпус зеленеет целиком и робот
@@ -142,14 +142,16 @@ export function mount(host) {
     if (!r.width || !r.height) return false;
     W = r.width; H = r.height;
     renderer.setSize(W, H, false);
-    // Камера смотрит на полосу целиком: по высоте робот занимает её всю,
-    // по горизонтали видно столько сцены, сколько пикселей в полосе.
-    const worldH = 4.6;
+    // Камера смотрит на полосу целиком: по горизонтали видно столько
+    // сцены, сколько пикселей в полосе. Запас по высоте нарочно больше
+    // роста робота — он стоит в нижней части кадра, и антенна не лезет
+    // к нижнему краю поля «О проекте».
+    const worldH = 5.75;
     camera.fov = 2 * Math.atan(worldH / 2 / camera.position.z) * 180 / Math.PI;
     camera.aspect = W / H;
     camera.updateProjectionMatrix();
     unit = worldH / H;                      // мир на пиксель
-    span = Math.max(0, (W * unit) / 2 - .95); // до какого x можно дойти
+    span = Math.max(0, (W * unit) / 2 - .85); // до какого x можно дойти
     return true;
   };
   fit();
@@ -183,9 +185,9 @@ export function mount(host) {
       const goal = near ? Math.max(-span, Math.min(span, tx)) : null;
       if (goal !== null) {
         const d = goal - x;
-        if (Math.abs(d) > .12) { const v = Math.sign(d) * Math.min(Math.max(2.6, span * .55), Math.abs(d) * 3.2); x += v * dt; speed = Math.abs(v); dir = Math.sign(d); }
+        if (Math.abs(d) > .16) { const v = Math.sign(d) * Math.min(Math.max(1.5, span * .28), Math.abs(d) * 1.8); x += v * dt; speed = Math.abs(v); dir = Math.sign(d); }
       } else {
-        const cruise = Math.max(1.15, span * .22); x += dir * cruise * dt; speed = cruise;
+        const cruise = Math.max(.72, span * .12); x += dir * cruise * dt; speed = cruise;
         if (x > span) { x = span; dir = -1; }
         if (x < -span) { x = -span; dir = 1; }
       }
@@ -194,9 +196,9 @@ export function mount(host) {
     facing = damp(facing, speed > .05 ? dir : facing, .12, dt * 60);
 
     robot.position.x = x;
-    walk += speed * dt * 6.4;
+    walk += speed * dt * 7.6;
     const swing = speed > .05 ? Math.sin(walk) : 0;
-    const amp = Math.min(1, speed / 1.2);
+    const amp = Math.min(1, speed / .8);
     legL.rotation.x = swing * .55 * amp;
     legR.rotation.x = -swing * .55 * amp;
     armL.rotation.x = -swing * .42 * amp;
