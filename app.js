@@ -209,6 +209,68 @@
     });
   }
 
+  const ring = $('studio-ring');
+  const frame = $('studio-frame');
+  if (ring && frame) {
+    const RING_TEXT = 'Студия основана в Иннополисе в 2024 году';
+    const path = ring.querySelector('#studio-path');
+    const textPath = ring.querySelector('textPath');
+    const SEP = ' \u00b7 ';
+
+    function layoutRing() {
+      const w = Math.round(frame.clientWidth), h = Math.round(frame.clientHeight);
+      if (!w || !h) return;
+      const inset = 9, r = Math.min(26, (Math.min(w, h) - inset * 2) / 2);
+      const x = inset, y = inset, W = w - inset * 2, H = h - inset * 2;
+      path.setAttribute('d',
+        `M${x + r},${y} H${x + W - r} A${r},${r} 0 0 1 ${x + W},${y + r} V${y + H - r}` +
+        ` A${r},${r} 0 0 1 ${x + W - r},${y + H} H${x + r} A${r},${r} 0 0 1 ${x},${y + H - r}` +
+        ` V${y + r} A${r},${r} 0 0 1 ${x + r},${y} Z`);
+      ring.setAttribute('viewBox', `0 0 ${w} ${h}`);
+
+      // Одна фраза задаёт шаг узора. Копий нужно столько, чтобы текст покрывал
+      // периметр даже когда он сдвинут на целый шаг вперёд, — тогда в момент
+      // возврата смещения к нулю картинка совпадает сама с собой и стыка не видно.
+      textPath.textContent = RING_TEXT + SEP;
+      const unit = textPath.getComputedTextLength();
+      if (!unit) return;
+      const perimeter = path.getTotalLength();
+      const copies = Math.ceil(perimeter / unit) + 1;
+      textPath.textContent = (RING_TEXT + SEP).repeat(copies);
+      ring.dataset.unit = String(unit);
+    }
+
+    let offset = 0, last = 0, running = false;
+    const SPEED = 26; // пикселей пути в секунду
+    function step(now) {
+      if (!running) return;
+      const unit = Number(ring.dataset.unit) || 0;
+      if (unit) {
+        offset = (offset + (now - last) / 1000 * SPEED) % unit;
+        textPath.setAttribute('startOffset', offset.toFixed(2));
+      }
+      last = now;
+      requestAnimationFrame(step);
+    }
+    function run(on) {
+      if (on === running) return;
+      running = on;
+      if (on) { last = performance.now(); requestAnimationFrame(step); }
+    }
+
+    layoutRing();
+    // Крутим только пока блок на экране: за его пределами кадры тратятся впустую.
+    if (!reduceMotion.matches) {
+      new IntersectionObserver((entries) => entries.forEach((e) => run(e.isIntersecting)),
+        { threshold: 0 }).observe(frame);
+    }
+    let ringTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(ringTimer);
+      ringTimer = setTimeout(layoutRing, 160);
+    });
+  }
+
   const word = $('footer-word');
   if (word && cases.length) {
     const WORD = 'PLAIR';

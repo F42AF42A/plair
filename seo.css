@@ -127,6 +127,12 @@
 .dot:focus-visible{outline:2px solid var(--accent);outline-offset:-6px}
 
 /* ── студия и журнал ───────────────────────────────────────── */
+/* Кольцо: текст идёт по скруглённому прямоугольнику, обводящему блок.
+   Рамка задаёт отступ, чтобы строка не наезжала на текст внутри. */
+.studio-frame{position:relative;padding:clamp(30px,3.6vw,54px) clamp(24px,3vw,46px)}
+.studio-ring{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+.studio-ring text{font-family:var(--body);font-size:12px;font-weight:600;letter-spacing:.22em;
+  text-transform:uppercase;fill:var(--accent);opacity:.62}
 .studio{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(0,1fr);gap:clamp(24px,4vw,72px);align-items:start}
 .studio blockquote{margin:0;font-family:var(--display);font-weight:300;letter-spacing:-.04em;line-height:1.1;
   font-size:clamp(23px,3.3vw,46px);max-width:none}
