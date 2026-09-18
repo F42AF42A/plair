@@ -241,6 +241,17 @@
   };
 
   let sending = false;
+  const sendingScreen = $('form-sending');
+  const fields = form.querySelector('.form-fields');
+  const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  // Экран показывается не меньше секунды: при быстром ответе он иначе моргает,
+  // и человек не успевает понять, что вообще произошло.
+  const MIN_SENDING = 900;
+  function showSending(on) {
+    if (sendingScreen) sendingScreen.classList.toggle('is-on', on);
+    if (fields) fields.inert = on;
+    form.setAttribute('aria-busy', String(on));
+  }
   const endpointReady = (() => {
     try {
       return !!config.formEndpoint && new URL(config.formEndpoint).protocol === 'https:'
@@ -294,6 +305,8 @@
     setSubmitLabel('Отправляем…');
     status.textContent = '';
     status.className = 'form-status';
+    showSending(true);
+    const startedAt = Date.now();
     const controller = new AbortController();
     const timeout = setTimeout(() => controller.abort(), 15000);
     try {
@@ -329,6 +342,8 @@
       status.className = 'form-status error';
     } finally {
       clearTimeout(timeout);
+      await wait(Math.max(0, MIN_SENDING - (Date.now() - startedAt)));
+      showSending(false);
       sending = false;
       submit.disabled = false;
       setSubmitLabel('Отправить');

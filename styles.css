@@ -141,6 +141,39 @@ ul,ol{margin:0}
 .form-status.error{color:var(--danger)}
 .form-status.success{color:var(--accent)}
 .honeypot{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
+
+/* ── экран отправки ────────────────────────────────────────── */
+/* Куб вращается над треугольным основанием. Две анимации не могут висеть
+   на одном элементе: обе пишут в transform, и вторая затирает первую —
+   поэтому подъём живёт на обёртке, а вращение на самом кубе. */
+.contact-inner{position:relative}
+.sending{display:none}
+.sending.is-on{position:absolute;inset:0;z-index:5;display:grid;place-content:center;justify-items:center;
+  gap:30px;border-radius:inherit;background:color-mix(in srgb,var(--bg-2) 90%,transparent);backdrop-filter:blur(4px)}
+.cube-scene{position:relative;width:150px;height:150px;perspective:560px;display:grid;place-items:center}
+.cube-lift{transform-style:preserve-3d;animation:cube-float 2.3s ease-in-out infinite alternate}
+.cube{--s:52px;position:relative;width:var(--s);height:var(--s);transform-style:preserve-3d;
+  animation:cube-spin 3.6s linear infinite}
+.cube span{position:absolute;inset:0;border:1px solid var(--accent);background:rgba(52,199,89,.12);
+  box-shadow:0 0 18px rgba(52,199,89,.4),inset 0 0 20px rgba(52,199,89,.22)}
+.cube span:nth-child(1){transform:translateZ(26px)}
+.cube span:nth-child(2){transform:rotateY(180deg) translateZ(26px)}
+.cube span:nth-child(3){transform:rotateY(90deg) translateZ(26px)}
+.cube span:nth-child(4){transform:rotateY(-90deg) translateZ(26px)}
+.cube span:nth-child(5){transform:rotateX(90deg) translateZ(26px)}
+.cube span:nth-child(6){transform:rotateX(-90deg) translateZ(26px)}
+.cube-plinth{position:absolute;bottom:16px;width:0;height:0;border-left:38px solid transparent;
+  border-right:38px solid transparent;border-bottom:34px solid rgba(52,199,89,.34);
+  transform:rotateX(68deg);filter:drop-shadow(0 0 11px rgba(52,199,89,.55));
+  animation:plinth-pulse 2.3s ease-in-out infinite alternate}
+.cube-glow{position:absolute;bottom:26px;width:96px;height:20px;border-radius:50%;
+  background:radial-gradient(ellipse,rgba(52,199,89,.35),transparent 70%);filter:blur(5px);
+  animation:plinth-pulse 2.3s ease-in-out infinite alternate}
+.sending-text{font-size:14px;letter-spacing:.14em;text-transform:uppercase;color:var(--dim)}
+@keyframes cube-spin{from{transform:rotateX(-22deg) rotateY(0deg)}to{transform:rotateX(-22deg) rotateY(360deg)}}
+@keyframes cube-float{from{transform:translateY(6px)}to{transform:translateY(-10px)}}
+@keyframes plinth-pulse{from{opacity:.55}to{opacity:1}}
+
 body.dialog-open{overflow:hidden}
 
 /* ── заставка ──────────────────────────────────────────────── */
@@ -174,4 +207,8 @@ body.dialog-open{overflow:hidden}
   #intro-splash{visibility:hidden!important}
   #intro-splash .intro-base,#intro-splash .intro-logo{animation:none!important}
   .button .blob,.button .f1,.button .f2,.text-link svg,.link svg{transition:none}
+  /* Куб замирает в статичной позе — экран отправки остаётся понятным,
+     но ничего не крутится. */
+  .cube,.cube-lift,.cube-plinth,.cube-glow{animation:none}
+  .cube{transform:rotateX(-22deg) rotateY(38deg)}
 }
