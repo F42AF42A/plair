@@ -83,7 +83,7 @@ html[data-input="pointer"] .button.solid:focus-visible:not(:hover){
 .site-nav a:hover{color:var(--ink)}
 
 /* ── кнопка со схлопывающейся точкой ───────────────────────── */
-.button{position:relative;display:inline-grid;place-items:center;min-height:46px;min-width:118px;padding:11px 24px;
+.button{position:relative;display:inline-grid;place-items:center;min-height:46px;min-width:134px;padding:11px 24px;
   border:1px solid var(--accent);border-radius:99px;background:none;color:var(--ink);cursor:pointer;
   font-family:var(--display);font-size:14px;font-weight:600;letter-spacing:.01em;overflow:hidden;flex:none}
 .button .blob{position:absolute;left:18px;top:calc(50% - 4px);width:8px;height:8px;border-radius:99px;
@@ -97,7 +97,10 @@ html[data-input="pointer"] .button.solid:focus-visible:not(:hover){
 .button:hover .f2,.button:focus-visible .f2{transform:none;opacity:1}
 .button:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
 .button:disabled{opacity:.45;cursor:not-allowed}
-.button.lg{min-height:58px;min-width:152px;font-size:16px;padding:14px 30px}
+/* Ширина подобрана так, чтобы точка стояла ровно посередине между левым
+   краем кнопки и первой буквой: надпись в кнопке центрируется, поэтому
+   этот просвет задаётся именно шириной, а не отступом. */
+.button.lg{min-height:58px;min-width:140px;font-size:16px;padding:14px 30px}
 .button.solid{background:var(--accent);border-color:var(--accent);color:var(--on-accent);
   transition:background .28s ease,color .28s ease}
 .button.solid .blob{display:none}

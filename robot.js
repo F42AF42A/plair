@@ -11,8 +11,8 @@
  * Модуль грузится лениво, при первом открытии формы: на остальных
  * страницах three.js не скачивается вовсе.
  */
-import * as THREE from '/assets/three.module.min.js?v=7';
-import { RoundedBoxGeometry } from '/assets/RoundedBoxGeometry.js?v=7';
+import * as THREE from '/assets/three.module.min.js?v=9';
+import { RoundedBoxGeometry } from '/assets/RoundedBoxGeometry.js?v=9';
 
 const ACCENT = 0x34c759;      // наш зелёный вместо #00ffc6
 const SHELL  = 0xc4c4c4;      // цвет корпуса из демо
@@ -35,7 +35,7 @@ export function mount(host) {
 
   const scene = new THREE.Scene();
   const camera = new THREE.PerspectiveCamera(30, 1, 0.1, 100);
-  camera.position.set(0, 0.72, 11);
+  camera.position.set(0, 0.72, 44);
 
   // Свет держим нейтральным: зелёный в сцене — только свой, из глаз,
   // антенны и индикатора. Иначе корпус зеленеет целиком и робот
@@ -146,12 +146,20 @@ export function mount(host) {
     // сцены, сколько пикселей в полосе. Запас по высоте нарочно больше
     // роста робота — он стоит в нижней части кадра, и антенна не лезет
     // к нижнему краю поля «О проекте».
+    //
+    // Камера стоит далеко, а угол узкий. Полоса шире своей высоты раз в
+    // пять, и с близкой камерой горизонтальный угол доходил до ста
+    // градусов: у краёв робота растягивало, как в широкоугольник. На
+    // сорока четырёх единицах угол падает до сорока, перспектива почти
+    // параллельная, и в любом месте полосы робот одинаковой ширины.
     const worldH = 5.75;
     camera.fov = 2 * Math.atan(worldH / 2 / camera.position.z) * 180 / Math.PI;
     camera.aspect = W / H;
     camera.updateProjectionMatrix();
     unit = worldH / H;                      // мир на пиксель
-    span = Math.max(0, (W * unit) / 2 - .85); // до какого x можно дойти
+    // Разворот делаем с запасом от края: у робота руки шире корпуса, и,
+    // упираясь в самую кромку кадра, он обрезался бы по плечо.
+    span = Math.max(0, (W * unit) / 2 - 1.6);
     return true;
   };
   fit();

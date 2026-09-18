@@ -172,11 +172,11 @@
 .breadcrumbs{padding-top:26px;color:var(--dim);font-size:13px;line-height:1.9}
 .breadcrumbs a:hover{color:var(--accent)}
 .intro{position:relative;padding-block:clamp(34px,5vw,72px) clamp(26px,3.4vw,48px);max-width:1000px}
-/* Паук бегает по всему первому экрану, но текст перекрывать не должен:
-   холст лежит под ним и курсор не перехватывает. */
-.spider-fx{position:absolute;inset:-14px 0;z-index:-1;pointer-events:none;overflow:hidden}
+/* Существам тесно в одном блоке: холст растянут на весь экран и держится
+   при прокрутке. Он лежит под содержимым и курсор не перехватывает. */
+.spider-fx{position:fixed;inset:0;z-index:0;pointer-events:none}
 .spider-fx canvas{display:block;width:100%;height:100%}
-.intro>:not(.spider-fx){position:relative}
+.site-shell,.contact-dialog{position:relative;z-index:1}
 .intro h1{font-size:clamp(34px,6vw,84px);font-weight:700;letter-spacing:-.05em;line-height:.98;margin:18px 0}
 .lead{font-size:clamp(17px,1.6vw,23px);line-height:1.48;max-width:60ch;color:var(--muted)}
 .intro .text-link{margin-top:6px}
