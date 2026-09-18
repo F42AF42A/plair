@@ -3,12 +3,12 @@
   const $ = (id) => document.getElementById(id);
   const cases = (window.PLAIR_CASES || []).filter(item => Array.isArray(item.media) && item.media.length);
   const config = window.PLAIR_CONFIG || {};
-  const stage = $('media-stage');
   const dialog = $('contact-dialog');
   const form = $('contact-form');
   const status = $('form-status');
   const submit = $('contact-submit');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
   const intro = $('intro-splash');
   if (intro) {
     try {
@@ -25,23 +25,7 @@
       }
     } catch { intro.classList.add('skip'); }
   }
-  let caseIndex = 0;
-  let frameIndex = 0;
-  let touchStart = null;
-  let sending = false;
-  let autoplayTimer = null;
-  // Intent: the visitor asked for autoplay (play button). Suspension: temporary
-  // stop while pointing at, focusing inside the gallery or the tab is hidden.
-  let autoplayOn = false;
-  let autoplaySuspended = false;
-  // Autoplay is opt-in: nothing moves and no extra frame is fetched until the
-  // visitor presses play. Flip to true to have it run from page load instead.
-  const AUTOPLAY_ON_LOAD = false;
-  const AUTOPLAY_MS = 6500;
-  const gallery = document.querySelector('.gallery');
-  const autoplayToggle = $('autoplay-toggle');
-  const liveRegion = $('case-live');
-  const pad = (number) => String(number).padStart(2, '0');
+
   const safeMedia = (value) => {
     if (typeof value !== 'string' || !value.trim()) return '';
     try {
@@ -49,8 +33,12 @@
       return ['https:', 'http:', 'file:'].includes(url.protocol) ? url.href : '';
     } catch { return ''; }
   };
-  // Narrow copies live next to the original as name-800.webp / name-1400.webp.
-  // A media entry opts in by declaring its natural width as `w`.
+  const esc = (value) => String(value == null ? '' : value)
+    .replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const pad = (n) => String(n).padStart(2, '0');
+
+  // Узкие копии лежат рядом с оригиналом: имя-800.webp, имя-1400.webp.
+  // Кадр подписывается на них, объявив свою натуральную ширину в `w`.
   const VARIANT_WIDTHS = [800, 1400];
   const srcsetFor = (item) => {
     const width = Number(item.w) || 0;
@@ -61,160 +49,155 @@
     parts.push(`${item.src} ${width}w`);
     return parts.join(', ');
   };
-  function showMedia(index) {
-    const entry = cases[caseIndex];
-    if (!entry) return;
-    frameIndex = (index + entry.media.length) % entry.media.length;
-    const item = entry.media[frameIndex];
-    const oldVideo = stage.querySelector('video');
-    if (oldVideo) oldVideo.pause();
-    const media = document.createElement(item.type === 'video' ? 'video' : 'img');
+
+  const ratio = (item) => {
+    const w = Number(item.w) || 0, h = Number(item.h) || 0;
+    return w > 0 && h > 0 ? w / h : 16 / 9;   // без размеров считаем кадр широким
+  };
+
+  /* Раскладка кадров идёт от пропорций, а не от их числа. flex-grow, равный
+     пропорции, даёт всем кадрам ряда одну высоту, а ширину — свою, поэтому
+     обрезать нечего в принципе. `cap` ограничивает высоту ряда: вертикальной
+     паре запаса нужно больше, иначе два узких кадра съёживаются до марок,
+     а широкому кадру сверху приходится уступить им место. */
+  function rowsFor(media, narrow) {
+    const isTall = (item) => ratio(item) < 1.2;
+    const head = media.slice(0, 1), rest = media.slice(1);
+    if (!rest.length) return [{ items: head, cap: isTall(media[0]) ? 460 : 420 }];
+    if (!narrow && media.every(isTall)) return [{ items: media, cap: 430 }];
+    if (narrow && media.every((m) => !isTall(m))) return media.map((m) => ({ items: [m], cap: 320 }));
+    const restTall = rest.every(isTall);
+    return [
+      { items: head, cap: isTall(media[0]) ? 430 : restTall ? (narrow ? 320 : 300) : (narrow ? 340 : 380) },
+      { items: rest, cap: restTall ? (narrow ? 340 : 430) : 300 }
+    ];
+  }
+
+  function frameHTML(item, entry) {
+    const src = safeMedia(item.src);
+    if (!src) return '';
+    const alt = esc(item.alt || entry.title);
     if (item.type === 'video') {
-      media.controls = true;
-      media.playsInline = true;
-      media.preload = 'metadata';
-      media.poster = safeMedia(item.poster);
-      media.setAttribute('aria-label', item.alt || entry.title);
-      media.append(document.createTextNode('Ваш браузер не поддерживает видео.'));
-    } else {
-      media.alt = item.alt || entry.title;
-      media.decoding = 'async';
-      media.draggable = false;
-      const srcset = srcsetFor(item);
-      if (srcset) { media.srcset = srcset; media.sizes = '100vw'; }
+      return `<figure style="--ar:${ratio(item).toFixed(3)}"><video src="${esc(src)}" poster="${esc(safeMedia(item.poster))}"
+        controls playsinline preload="metadata" aria-label="${alt}"></video></figure>`;
     }
-    media.addEventListener('error', () => {
-      if (!stage.contains(media)) return;
-      const message = document.createElement('p');
-      message.className = 'media-error';
-      message.textContent = 'Не удалось загрузить кадр. Попробуйте другой.';
-      stage.replaceChildren(message);
-    }, { once: true });
-    media.src = safeMedia(item.src);
-    stage.replaceChildren(media);
-    stage.closest('.gallery').classList.toggle('video-active', item.type === 'video');
-    if (!reduceMotion.matches) media.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'ease-out' });
-    Array.from($('frame-dots').children).forEach((button, i) => button.setAttribute('aria-current', String(i === frameIndex)));
+    const srcset = srcsetFor(item);
+    const dims = Number(item.w) > 0 && Number(item.h) > 0 ? ` width="${item.w}" height="${item.h}"` : '';
+    return `<figure style="--ar:${ratio(item).toFixed(3)}"><img src="${esc(src)}" alt="${alt}"${dims}
+      ${srcset ? `srcset="${esc(srcset)}" sizes="(max-width: 980px) 92vw, 46vw"` : ''}
+      loading="lazy" decoding="async"></figure>`;
   }
-  function announce() {
-    const entry = cases[caseIndex];
-    if (!liveRegion || !entry) return;
-    liveRegion.textContent = `Кейс ${caseIndex + 1} из ${cases.length}: ${entry.title}. `
-      + `Кадр ${frameIndex + 1} из ${entry.media.length}.`;
+
+  function collageHTML(entry, narrow) {
+    const wash = safeMedia(entry.media[0].src);
+    const rows = rowsFor(entry.media, narrow).map((row) => {
+      const sum = row.items.reduce((acc, item) => acc + ratio(item), 0);
+      return `<div class="collage-row" style="--sum:${sum.toFixed(3)};--cap:${row.cap}px">
+        ${row.items.map((item) => frameHTML(item, entry)).join('')}</div>`;
+    }).join('');
+    return `<div class="collage">
+      ${wash ? `<img class="collage-wash" src="${esc(wash)}" alt="" aria-hidden="true">` : ''}${rows}</div>`;
   }
-  function autoplayPossible() {
-    const entry = cases[caseIndex];
-    return !!entry && cases.length > 1 && !reduceMotion.matches;
+
+  const holder = $('cases');
+  const narrowQuery = window.matchMedia('(max-width: 980px)');
+  let stack = [];
+
+  function renderCases() {
+    if (!holder || !cases.length) return;
+    const narrow = narrowQuery.matches;
+    holder.innerHTML = cases.map((entry, i) => `
+      <section class="case">
+        <article class="case-card" aria-labelledby="case-${i}">
+          <div class="case-text">
+            <span class="case-no">${pad(i + 1)} / ${pad(cases.length)}</span>
+            <h3 id="case-${i}">${esc(entry.title)}</h3>
+            <p class="case-cat">${esc(entry.category)}</p>
+            <p class="case-desc">${esc(entry.description)}</p>
+            ${entry.note ? `<p class="case-desc">${esc(entry.note)}</p>` : ''}
+            <p class="case-fmt">${entry.media.map((m) => (m.w && m.h ? `${m.w}×${m.h}` : '')).filter(Boolean).join(' · ')}</p>
+          </div>
+          <div>${collageHTML(entry, narrow)}</div>
+        </article>
+      </section>`).join('');
+    stack = Array.from(holder.querySelectorAll('.case'));
+    positionStack();
   }
-  function stopAutoplay() {
-    if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; }
-  }
-  function startAutoplay() {
-    stopAutoplay();
-    if (!autoplayOn || autoplaySuspended || !autoplayPossible()) return;
-    if (document.visibilityState === 'hidden') return;
-    autoplayTimer = setInterval(() => {
-      const video = stage.querySelector('video');
-      if (video && !video.paused) return;
-      if (frameIndex + 1 >= cases[caseIndex].media.length) {
-        showCase(caseIndex + 1);
-      } else {
-        showMedia(frameIndex + 1);
-      }
-    }, AUTOPLAY_MS);
-  }
-  // Intent changes: the play/pause button, and anything that means "I am
-  // driving now" (a touch on the stage).
-  function setAutoplay(on) {
-    autoplayOn = on;
-    if (on) autoplaySuspended = false;
-    if (autoplayToggle) {
-      autoplayToggle.classList.toggle('is-playing', on);
-      autoplayToggle.setAttribute('aria-label', on ? 'Остановить автопрокрутку' : 'Запустить автопрокрутку');
-    }
-    if (on) startAutoplay(); else stopAutoplay();
-  }
-  // Transient stops: pointer over the gallery, focus inside it, hidden tab.
-  function suspendAutoplay() { autoplaySuspended = true; stopAutoplay(); }
-  function resumeAutoplay() { autoplaySuspended = false; startAutoplay(); }
-  function showCase(index) {
-    if (!cases.length) return;
-    caseIndex = (index + cases.length) % cases.length;
-    const entry = cases[caseIndex];
-    $('case-title').textContent = entry.title;
-    $('case-category').textContent = entry.category;
-    $('case-description').textContent = entry.description;
-    $('case-note').textContent = entry.note || '';
-    $('case-note').hidden = !entry.note;
-    $('media-counter').textContent = `${pad(caseIndex + 1)} / ${pad(cases.length)}`;
-    $('frame-dots').replaceChildren();
-    entry.media.forEach((item, i) => {
-      const button = document.createElement('button');
-      button.type = 'button';
-      button.className = 'frame-dot';
-      button.setAttribute('aria-label', `${item.type === 'video' ? 'Видео' : 'Кадр'} ${i + 1}: ${item.alt || entry.title}`);
-      button.addEventListener('click', () => { showMedia(i); announce(); startAutoplay(); });
-      $('frame-dots').append(button);
+
+  // Чем ближе следующая карточка, тем сильнее уезжает и притемняется текущая.
+  let queued = false;
+  function positionStack() {
+    queued = false;
+    if (!stack.length || narrowQuery.matches || reduceMotion.matches) return;
+    const vh = window.innerHeight, from = vh * 0.92, to = vh * 0.12;
+    stack.forEach((section, i) => {
+      const card = section.querySelector('.case-card');
+      const next = stack[i + 1];
+      if (!next) { card.style.setProperty('--p', 0); return; }
+      const progress = (from - next.getBoundingClientRect().top) / (from - to);
+      card.style.setProperty('--p', Math.max(0, Math.min(1, progress)).toFixed(3));
     });
-    $('previous-frame').hidden = $('next-frame').hidden = cases.length < 2;
-    if (autoplayToggle) autoplayToggle.hidden = !autoplayPossible();
-    showMedia(0);
-    startAutoplay();
   }
-  if (stage && cases.length) {
-  const goToCase = (index) => { showCase(index); announce(); };
-  $('previous-frame').addEventListener('click', () => goToCase(caseIndex - 1));
-  $('next-frame').addEventListener('click', () => goToCase(caseIndex + 1));
-  if (autoplayToggle) autoplayToggle.addEventListener('click', () => setAutoplay(!autoplayOn));
-  stage.addEventListener('keydown', (event) => {
-    if (event.target.tagName === 'VIDEO') return;
-    if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-      event.preventDefault();
-      goToCase(caseIndex + (event.key === 'ArrowLeft' ? -1 : 1));
-    }
-  });
-  stage.addEventListener('touchstart', (event) => {
-    // A touch means the visitor is steering; hand the carousel over to them.
-    setAutoplay(false);
-    if (event.target.tagName === 'VIDEO' || event.touches.length !== 1) { touchStart = null; return; }
-    touchStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
+  window.addEventListener('scroll', () => {
+    if (!queued) { queued = true; requestAnimationFrame(positionStack); }
   }, { passive: true });
-  stage.addEventListener('touchend', (event) => {
-    if (!touchStart || !event.changedTouches.length) return;
-    const dx = event.changedTouches[0].clientX - touchStart.x;
-    const dy = event.changedTouches[0].clientY - touchStart.y;
-    touchStart = null;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) goToCase(caseIndex + (dx < 0 ? 1 : -1));
-  }, { passive: true });
-  stage.addEventListener('touchcancel', () => { touchStart = null; }, { passive: true });
-  gallery.addEventListener('mouseenter', suspendAutoplay);
-  gallery.addEventListener('mouseleave', resumeAutoplay);
-  gallery.addEventListener('focusin', suspendAutoplay);
-  gallery.addEventListener('focusout', (event) => {
-    if (!gallery.contains(event.relatedTarget)) resumeAutoplay();
-  });
-  document.addEventListener('visibilitychange', () => {
-    if (document.visibilityState === 'hidden') suspendAutoplay(); else resumeAutoplay();
-  });
+  window.addEventListener('resize', positionStack);
+  narrowQuery.addEventListener('change', renderCases);
+  renderCases();
+
+  const tickerRow = $('ticker-row');
+  const ticker = $('ticker');
+  const tickerStop = $('ticker-stop');
+  if (tickerRow && cases.length) {
+    // Дублируем список: анимация сдвигает ленту ровно на половину и замыкается.
+    const line = cases.map((entry) => `<span>${esc(entry.title)}</span>`).join('');
+    tickerRow.innerHTML = line + line;
   }
-  $('contact-open').addEventListener('click', () => {
+  if (ticker && tickerStop) {
+    tickerStop.addEventListener('click', () => {
+      const paused = ticker.toggleAttribute('data-paused');
+      tickerStop.setAttribute('aria-pressed', String(paused));
+      tickerStop.setAttribute('aria-label', paused ? 'Запустить бегущую строку' : 'Остановить бегущую строку');
+    });
+  }
+
+  if (!dialog || !form) return;
+
+  const openers = Array.from(document.querySelectorAll('#contact-open,[data-contact-open]'));
+  let lastOpener = null;
+  openers.forEach((button) => button.addEventListener('click', () => {
+    lastOpener = button;
     dialog.showModal();
     document.body.classList.add('dialog-open');
-    // Focus the close control, so opening the form on mobile does not summon the keyboard.
+    // Фокус на кнопку закрытия: иначе на телефоне сразу выезжает клавиатура.
     $('contact-close').focus({ preventScroll: true });
-  });
+  }));
   $('contact-close').addEventListener('click', () => dialog.close());
   dialog.addEventListener('click', (event) => {
     const rect = dialog.getBoundingClientRect();
-    if (event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom)) dialog.close();
+    if (event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right
+      || event.clientY < rect.top || event.clientY > rect.bottom)) dialog.close();
   });
   dialog.addEventListener('close', () => {
     document.body.classList.remove('dialog-open');
-    $('contact-open').focus({ preventScroll: true });
+    (lastOpener || openers[0])?.focus({ preventScroll: true });
   });
+
+  // Надпись на кнопке лежит в двух слоях: видимом и подъезжающем при наведении.
+  const setSubmitLabel = (text) => {
+    const face = submit.querySelector('.f1');
+    const hover = submit.querySelector('.f2');
+    if (face) face.textContent = text;
+    if (hover && hover.firstChild) hover.firstChild.nodeValue = text;
+    if (!face) submit.textContent = text;
+  };
+
+  let sending = false;
   const endpointReady = (() => {
-    try { return !!config.formEndpoint && new URL(config.formEndpoint).protocol === 'https:' && (config.formService !== 'formsubmit' || config.formActivated === true); }
-    catch { return false; }
+    try {
+      return !!config.formEndpoint && new URL(config.formEndpoint).protocol === 'https:'
+        && (config.formService !== 'formsubmit' || config.formActivated === true);
+    } catch { return false; }
   })();
   const emailReady = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(config.contactEmail || '');
   if (!endpointReady && !emailReady) {
@@ -223,24 +206,28 @@
   } else if (!endpointReady) {
     status.textContent = 'Откроется почтовое приложение с текстом заявки.';
   }
+
   const contactInput = form.elements.contact;
   contactInput.addEventListener('input', () => {
     contactInput.setCustomValidity('');
     contactInput.removeAttribute('aria-invalid');
     $('contact-error').hidden = true;
   });
+
   form.addEventListener('submit', async (event) => {
     event.preventDefault();
     if (sending || (!endpointReady && !emailReady)) return;
     const data = Object.fromEntries(new FormData(form).entries());
-    Object.keys(data).forEach(key => { data[key] = String(data[key]).trim(); });
+    Object.keys(data).forEach((key) => { data[key] = String(data[key]).trim(); });
     if (data._gotcha) return;
     if (!data.name || !data.project) {
       status.textContent = 'Заполните имя и описание проекта.';
       status.className = 'form-status error';
       return;
     }
-    const isContact = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact) || /^@[a-zA-Z][a-zA-Z0-9_]{4,31}$/.test(data.contact) || /^https:\/\/t\.me\/[a-zA-Z][a-zA-Z0-9_]{4,31}\/?$/.test(data.contact);
+    const isContact = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact)
+      || /^@[a-zA-Z][a-zA-Z0-9_]{4,31}$/.test(data.contact)
+      || /^https:\/\/t\.me\/[a-zA-Z][a-zA-Z0-9_]{4,31}\/?$/.test(data.contact);
     if (!isContact) {
       contactInput.setCustomValidity('Укажите email или Telegram в формате @username.');
       contactInput.setAttribute('aria-invalid', 'true');
@@ -256,7 +243,7 @@
     }
     sending = true;
     submit.disabled = true;
-    submit.textContent = 'Отправляем…';
+    setSubmitLabel('Отправляем…');
     status.textContent = '';
     status.className = 'form-status';
     const controller = new AbortController();
@@ -270,13 +257,19 @@
         _subject: 'PLAIR — новая заявка с сайта',
         _template: 'table',
         _honey: data._gotcha || '',
-        ...( /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact) ? { email: data.contact } : {} )
+        ...(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact) ? { email: data.contact } : {})
       } : data;
-      const response = await fetch(config.formEndpoint, { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(payload), signal: controller.signal });
+      const response = await fetch(config.formEndpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
       if (!response.ok) throw new Error('Delivery failed');
       if (config.formService === 'formsubmit') {
         const result = await response.json();
-        if (![true, 'true'].includes(result.success) || /activat|confirm your email|check your email/i.test(String(result.message || ''))) {
+        if (![true, 'true'].includes(result.success)
+          || /activat|confirm your email|check your email/i.test(String(result.message || ''))) {
           throw new Error('Submission not accepted');
         }
       }
@@ -290,11 +283,7 @@
       clearTimeout(timeout);
       sending = false;
       submit.disabled = false;
-      submit.textContent = 'Отправить';
+      setSubmitLabel('Отправить');
     }
   });
-  if (stage && cases.length) {
-    showCase(0);
-    setAutoplay(AUTOPLAY_ON_LOAD && autoplayPossible());
-  }
 })();
