@@ -14,13 +14,16 @@
     </header><main id="main"><section id="portfolio"><article class="case" aria-labelledby="case-title">
         <section class="gallery" aria-label="Изображения и видео проекта" aria-roledescription="карусель">
           <div class="media-stage" id="media-stage" tabindex="0" aria-label="Переключение проектов. Используйте стрелки влево и вправо.">
-            <img class="hero-image" id="initial-image" src="/assets/marshrut-perestroen-1.webp" alt="Заставка «Маршрут перестроен» с автомобилем на заснеженной дороге" fetchpriority="high" width="2000" height="1134">
+            <img class="hero-image" id="initial-image" src="/assets/marshrut-perestroen-1.webp" srcset="/assets/marshrut-perestroen-1-800.webp 800w, /assets/marshrut-perestroen-1-1400.webp 1400w, /assets/marshrut-perestroen-1.webp 2000w" sizes="100vw" alt="Заставка «Маршрут перестроен» с автомобилем на заснеженной дороге" fetchpriority="high" width="2000" height="1134">
           </div>
           <div class="gallery-overlay">
             <div class="gallery-bottom-row">
-              <p class="media-counter" id="media-counter" aria-live="polite" aria-atomic="true">01 / 03</p>
-              <div class="frame-dots" id="frame-dots" aria-label="Выбрать кадр"></div>
-              <div class="gallery-controls">
+              <div class="gallery-playback">
+                <button class="arrow-button play-button" id="autoplay-toggle" type="button" aria-label="Запустить автопрокрутку" hidden><svg class="icon-play" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5.5v13l11-6.5z"/></svg><svg class="icon-pause" viewBox="0 0 24 24" aria-hidden="true"><path d="M9.5 5.5v13M14.5 5.5v13"/></svg></button>
+                <p class="media-counter" id="media-counter">01 / 03</p>
+              </div>
+              <div class="frame-dots" id="frame-dots" role="group" aria-label="Кадры проекта"></div>
+              <div class="gallery-controls" role="group" aria-label="Проекты">
                 <button class="arrow-button" id="previous-frame" type="button" aria-label="Предыдущий кейс"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m7-7-7 7 7 7"/></svg></button>
                 <button class="arrow-button" id="next-frame" type="button" aria-label="Следующий кейс"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7"/></svg></button>
               </div>
@@ -31,6 +34,7 @@
           <div class="case-heading">
             <h2 id="case-title">Маршрут перестроен</h2>
             <p id="case-category">Web</p>
+            <p class="visually-hidden" id="case-live" role="status"></p>
           </div>
           <div class="case-copy">
             <p id="case-description">Игра для промо фильма о путешествии по зимней Якутии.</p>

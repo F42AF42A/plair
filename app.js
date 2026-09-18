@@ -30,7 +30,17 @@
   let touchStart = null;
   let sending = false;
   let autoplayTimer = null;
-  const AUTOPLAY_MS = 2000;
+  // Intent: the visitor asked for autoplay (play button). Suspension: temporary
+  // stop while pointing at, focusing inside the gallery or the tab is hidden.
+  let autoplayOn = false;
+  let autoplaySuspended = false;
+  // Autoplay is opt-in: nothing moves and no extra frame is fetched until the
+  // visitor presses play. Flip to true to have it run from page load instead.
+  const AUTOPLAY_ON_LOAD = false;
+  const AUTOPLAY_MS = 6500;
+  const gallery = document.querySelector('.gallery');
+  const autoplayToggle = $('autoplay-toggle');
+  const liveRegion = $('case-live');
   const pad = (number) => String(number).padStart(2, '0');
   const safeMedia = (value) => {
     if (typeof value !== 'string' || !value.trim()) return '';
@@ -38,6 +48,18 @@
       const url = new URL(value, window.location.href);
       return ['https:', 'http:', 'file:'].includes(url.protocol) ? url.href : '';
     } catch { return ''; }
+  };
+  // Narrow copies live next to the original as name-800.webp / name-1400.webp.
+  // A media entry opts in by declaring its natural width as `w`.
+  const VARIANT_WIDTHS = [800, 1400];
+  const srcsetFor = (item) => {
+    const width = Number(item.w) || 0;
+    if (!width || !safeMedia(item.src) || !/\.webp$/i.test(item.src)) return '';
+    const base = item.src.replace(/\.webp$/i, '');
+    const parts = VARIANT_WIDTHS.filter((w) => w < width).map((w) => `${base}-${w}.webp ${w}w`);
+    if (!parts.length) return '';
+    parts.push(`${item.src} ${width}w`);
+    return parts.join(', ');
   };
   function showMedia(index) {
     const entry = cases[caseIndex];
@@ -58,6 +80,8 @@
       media.alt = item.alt || entry.title;
       media.decoding = 'async';
       media.draggable = false;
+      const srcset = srcsetFor(item);
+      if (srcset) { media.srcset = srcset; media.sizes = '100vw'; }
     }
     media.addEventListener('error', () => {
       if (!stage.contains(media)) return;
@@ -72,13 +96,23 @@
     if (!reduceMotion.matches) media.animate([{ opacity: 0 }, { opacity: 1 }], { duration: 280, easing: 'ease-out' });
     Array.from($('frame-dots').children).forEach((button, i) => button.setAttribute('aria-current', String(i === frameIndex)));
   }
+  function announce() {
+    const entry = cases[caseIndex];
+    if (!liveRegion || !entry) return;
+    liveRegion.textContent = `Кейс ${caseIndex + 1} из ${cases.length}: ${entry.title}. `
+      + `Кадр ${frameIndex + 1} из ${entry.media.length}.`;
+  }
+  function autoplayPossible() {
+    const entry = cases[caseIndex];
+    return !!entry && cases.length > 1 && !reduceMotion.matches;
+  }
   function stopAutoplay() {
     if (autoplayTimer) { clearInterval(autoplayTimer); autoplayTimer = null; }
   }
   function startAutoplay() {
     stopAutoplay();
-    const entry = cases[caseIndex];
-    if (!entry || entry.media.length < 2 || reduceMotion.matches) return;
+    if (!autoplayOn || autoplaySuspended || !autoplayPossible()) return;
+    if (document.visibilityState === 'hidden') return;
     autoplayTimer = setInterval(() => {
       const video = stage.querySelector('video');
       if (video && !video.paused) return;
@@ -89,6 +123,20 @@
       }
     }, AUTOPLAY_MS);
   }
+  // Intent changes: the play/pause button, and anything that means "I am
+  // driving now" (a touch on the stage).
+  function setAutoplay(on) {
+    autoplayOn = on;
+    if (on) autoplaySuspended = false;
+    if (autoplayToggle) {
+      autoplayToggle.classList.toggle('is-playing', on);
+      autoplayToggle.setAttribute('aria-label', on ? 'Остановить автопрокрутку' : 'Запустить автопрокрутку');
+    }
+    if (on) startAutoplay(); else stopAutoplay();
+  }
+  // Transient stops: pointer over the gallery, focus inside it, hidden tab.
+  function suspendAutoplay() { autoplaySuspended = true; stopAutoplay(); }
+  function resumeAutoplay() { autoplaySuspended = false; startAutoplay(); }
   function showCase(index) {
     if (!cases.length) return;
     caseIndex = (index + cases.length) % cases.length;
@@ -105,24 +153,29 @@
       button.type = 'button';
       button.className = 'frame-dot';
       button.setAttribute('aria-label', `${item.type === 'video' ? 'Видео' : 'Кадр'} ${i + 1}: ${item.alt || entry.title}`);
-      button.addEventListener('click', () => { showMedia(i); startAutoplay(); });
+      button.addEventListener('click', () => { showMedia(i); announce(); startAutoplay(); });
       $('frame-dots').append(button);
     });
     $('previous-frame').hidden = $('next-frame').hidden = cases.length < 2;
+    if (autoplayToggle) autoplayToggle.hidden = !autoplayPossible();
     showMedia(0);
     startAutoplay();
   }
   if (stage && cases.length) {
-  $('previous-frame').addEventListener('click', () => showCase(caseIndex - 1));
-  $('next-frame').addEventListener('click', () => showCase(caseIndex + 1));
+  const goToCase = (index) => { showCase(index); announce(); };
+  $('previous-frame').addEventListener('click', () => goToCase(caseIndex - 1));
+  $('next-frame').addEventListener('click', () => goToCase(caseIndex + 1));
+  if (autoplayToggle) autoplayToggle.addEventListener('click', () => setAutoplay(!autoplayOn));
   stage.addEventListener('keydown', (event) => {
     if (event.target.tagName === 'VIDEO') return;
     if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
       event.preventDefault();
-      showCase(caseIndex + (event.key === 'ArrowLeft' ? -1 : 1));
+      goToCase(caseIndex + (event.key === 'ArrowLeft' ? -1 : 1));
     }
   });
   stage.addEventListener('touchstart', (event) => {
+    // A touch means the visitor is steering; hand the carousel over to them.
+    setAutoplay(false);
     if (event.target.tagName === 'VIDEO' || event.touches.length !== 1) { touchStart = null; return; }
     touchStart = { x: event.touches[0].clientX, y: event.touches[0].clientY };
   }, { passive: true });
@@ -131,11 +184,18 @@
     const dx = event.changedTouches[0].clientX - touchStart.x;
     const dy = event.changedTouches[0].clientY - touchStart.y;
     touchStart = null;
-    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) showCase(caseIndex + (dx < 0 ? 1 : -1));
+    if (Math.abs(dx) > 50 && Math.abs(dx) > Math.abs(dy) * 1.5) goToCase(caseIndex + (dx < 0 ? 1 : -1));
   }, { passive: true });
   stage.addEventListener('touchcancel', () => { touchStart = null; }, { passive: true });
-  stage.addEventListener('mouseenter', stopAutoplay);
-  stage.addEventListener('mouseleave', startAutoplay);
+  gallery.addEventListener('mouseenter', suspendAutoplay);
+  gallery.addEventListener('mouseleave', resumeAutoplay);
+  gallery.addEventListener('focusin', suspendAutoplay);
+  gallery.addEventListener('focusout', (event) => {
+    if (!gallery.contains(event.relatedTarget)) resumeAutoplay();
+  });
+  document.addEventListener('visibilitychange', () => {
+    if (document.visibilityState === 'hidden') suspendAutoplay(); else resumeAutoplay();
+  });
   }
   $('contact-open').addEventListener('click', () => {
     dialog.showModal();
@@ -233,5 +293,8 @@
       submit.textContent = 'Отправить';
     }
   });
-  if (stage && cases.length) showCase(0);
+  if (stage && cases.length) {
+    showCase(0);
+    setAutoplay(AUTOPLAY_ON_LOAD && autoplayPossible());
+  }
 })();
