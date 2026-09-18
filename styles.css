@@ -140,39 +140,18 @@ ul,ol{margin:0}
 #contact-form{display:flex;flex-direction:column;gap:clamp(20px,2.4vw,28px)}
 .form-bottom{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
 /* ── робот в форме ─────────────────────────────────────────── */
-/* Ходит в пустой полосе слева от кнопки. Как только форме есть что
-   сказать, уступает место: статус важнее украшения. */
-.walker{position:relative;flex:1 1 130px;min-width:0;height:46px;overflow:hidden;
+/* Живёт в пустой полосе слева от кнопки отправки: следит за курсором,
+   идёт к нему, когда тот рядом, и гуляет из края в край, когда нет.
+   Сцена на three.js подгружается лениво — при первом открытии формы.
+   Полоса выше строки ровно настолько, насколько позволяют отступы
+   формы: отрицательные поля возвращают строке её прежнюю высоту. */
+.walker{--walk-h:clamp(74px,8vw,98px);
+  position:relative;flex:1 1 90px;min-width:0;
+  height:var(--walk-h);margin-block:calc((46px - var(--walk-h)) / 2);
   pointer-events:none;transition:opacity .3s}
+.walker canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+/* Как только форме есть что сказать, робот уступает место. */
 .form-bottom:has(.form-status:not(:empty)) .walker{opacity:0}
-.bot{position:absolute;bottom:2px;left:0;width:30px;height:40px;
-  animation:bot-walk 15s linear infinite}
-.bot-shell{fill:#B9C1B9}
-.bot-screen{fill:#0A0C0A}
-.bot-eyes circle{fill:var(--accent);transform-box:fill-box;transform-origin:center;
-  animation:bot-blink 3.4s steps(1,end) infinite}
-.bot-led{fill:var(--accent)}
-.bot-ant{stroke:#B9C1B9;stroke-width:1.2;stroke-linecap:round}
-.bot-body{transform-box:fill-box;transform-origin:center;animation:bot-bob .46s ease-in-out infinite alternate}
-.bot-leg{fill:#8E968E;transform-box:fill-box;transform-origin:50% 8%}
-.bot-leg-l{animation:bot-step .46s ease-in-out infinite alternate}
-.bot-leg-r{animation:bot-step .46s ease-in-out infinite alternate-reverse}
-.bot-arm{transform-box:fill-box;transform-origin:50% 12%}
-.bot-arm rect{fill:#8E968E}
-.bot-arm-l{animation:bot-swing .46s ease-in-out infinite alternate-reverse}
-.bot-arm-r{animation:bot-swing .46s ease-in-out infinite alternate}
-/* Разворот на краях: шагает вправо, поворачивается, шагает обратно. */
-@keyframes bot-walk{
-  0%{left:0;transform:scaleX(1)}
-  46%{left:calc(100% - 30px);transform:scaleX(1)}
-  50%{left:calc(100% - 30px);transform:scaleX(-1)}
-  96%{left:0;transform:scaleX(-1)}
-  100%{left:0;transform:scaleX(1)}
-}
-@keyframes bot-step{from{transform:rotate(-19deg)}to{transform:rotate(19deg)}}
-@keyframes bot-swing{from{transform:rotate(13deg)}to{transform:rotate(-13deg)}}
-@keyframes bot-bob{from{transform:translateY(.7px)}to{transform:translateY(-.7px)}}
-@keyframes bot-blink{0%,92%{transform:scaleY(1)}93%,97%{transform:scaleY(.12)}98%,100%{transform:scaleY(1)}}
 .form-status{font-size:14px;color:var(--muted);margin:0}
 .form-status.error{color:var(--danger)}
 .form-status.success{color:var(--accent)}
@@ -246,6 +225,5 @@ body.dialog-open{overflow:hidden}
   /* Куб замирает в статичной позе — экран отправки остаётся понятным,
      но ничего не крутится. */
   .cube,.cube-lift,.cube-plinth,.cube-glow{animation:none}
-  .bot,.bot-body,.bot-leg,.bot-arm,.bot-eyes circle{animation:none}
   .cube{transform:rotateX(-22deg) rotateY(38deg)}
 }

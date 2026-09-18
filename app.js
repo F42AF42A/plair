@@ -510,10 +510,22 @@
 
   if (!dialog || !form) return;
 
+  // Робота грузим ленивo: three.js весит прилично, и до первого открытия
+  // формы он никому не нужен. Сбой загрузки — просто пустая полоса.
+  let botLoaded = false;
+  const loadBot = () => {
+    if (botLoaded) return;
+    botLoaded = true;
+    const host = document.querySelector('.walker');
+    if (!host) return;
+    import('/robot.js?v=5').then((m) => m.mount(host)).catch(() => {});
+  };
+
   const openers = Array.from(document.querySelectorAll('#contact-open,[data-contact-open]'));
   let lastOpener = null;
   openers.forEach((button) => button.addEventListener('click', () => {
     lastOpener = button;
+    loadBot();
     dialog.showModal();
     document.body.classList.add('dialog-open');
     // Фокус на кнопку закрытия: иначе на телефоне сразу выезжает клавиатура.
