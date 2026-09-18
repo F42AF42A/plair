@@ -80,5 +80,16 @@ window.PLAIR_CASES = [
       { type: "image", src: "/assets/t-quest-2.webp", alt: "Экран выбора стихии с командой персонажей в T-Quest" },
       { type: "image", src: "/assets/t-quest-3.webp", alt: "Персонаж-бык Хнум в T-Quest" }
     ]
+  },
+  {
+    id: "innosim",
+    title: "Инносим",
+    category: "Web",
+    description: "Симулятор городского движения.",
+    media: [
+      { type: "image", src: "/assets/innosim-1.webp", w: 2000, alt: "3D-модель круглого здания с автономным такси и пешеходами в симуляторе «Инносим»" },
+      { type: "image", src: "/assets/innosim-2.webp", w: 2000, alt: "Роботы-доставщики и беспилотный транспорт на городской улице в симуляторе «Инносим»" },
+      { type: "image", src: "/assets/innosim-3.webp", w: 2000, alt: "Панорама квартала с беспилотным транспортом в симуляторе «Инносим»" }
+    ]
   }
 ];
