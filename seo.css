@@ -91,9 +91,11 @@
 /* Раньше кейсы шли стопкой сверху вниз: при семи проектах это уже длинная
    лента, при пятнадцати — бесконечная. Карусель держит высоту блока
    постоянной независимо от числа кейсов. */
-.carousel-nav{display:flex;align-items:center;gap:10px;margin-left:auto}
-.carousel-count{font-family:var(--display);font-size:13px;font-weight:600;color:var(--dim);
-  font-variant-numeric:tabular-nums;letter-spacing:.06em;margin:0 6px 0 0}
+/* Стрелки живут в текстовой колонке карточки, а не в шапке секции: карточка
+   занимает экран целиком, и управление за её пределами просто не видно. */
+.case-nav{display:flex;align-items:center;gap:10px;margin-top:clamp(22px,2.6vw,34px)}
+.case-no{font-family:var(--display);font-size:13px;font-weight:600;color:var(--dim);
+  font-variant-numeric:tabular-nums;letter-spacing:.06em;margin-right:6px}
 .arrow{width:48px;height:48px;border:1px solid var(--line-2);border-radius:50%;background:none;color:var(--ink);
   display:grid;place-items:center;cursor:pointer;flex:none;
   transition:border-color .2s,background .2s,color .2s,opacity .2s}
@@ -111,13 +113,10 @@
   border-radius:var(--radius);padding:clamp(15px,1.9vw,28px);
   display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:clamp(15px,2.2vw,34px)}
 .case-text{display:flex;flex-direction:column;justify-content:center;min-width:0}
-.case-no{font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.14em;color:var(--accent);
-  font-variant-numeric:tabular-nums}
-.case-text h3{font-family:var(--display);font-size:clamp(25px,2.9vw,42px);font-weight:600;margin:14px 0 0;
+.case-text h3{font-family:var(--display);font-size:clamp(25px,2.9vw,42px);font-weight:600;margin:0;
   letter-spacing:-.04em;line-height:1.02}
 .case-cat{margin-top:10px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
 .case-desc{color:var(--muted);margin-top:16px;line-height:1.5;max-width:38ch}
-.case-fmt{margin-top:18px;font-size:12px;color:var(--dim);font-variant-numeric:tabular-nums;letter-spacing:.04em}
 
 .carousel-dots{display:flex;justify-content:center;gap:2px;margin-top:14px}
 .dot{width:44px;height:44px;display:grid;place-items:center;background:none;border:0;padding:0;cursor:pointer;

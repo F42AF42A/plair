@@ -102,9 +102,6 @@
   const track = $('cases');
   const narrowQuery = window.matchMedia('(max-width: 980px)');
   const dotsBox = $('case-dots');
-  const counter = $('case-count');
-  const prev = $('case-prev');
-  const next = $('case-next');
   const live = $('case-live');
   let at = 0;
 
@@ -116,12 +113,19 @@
                aria-label="${i + 1} из ${cases.length}: ${esc(entry.title)}">
         <article class="case-card">
           <div class="case-text">
-            <span class="case-no">${pad(i + 1)} / ${pad(cases.length)}</span>
             <h3>${esc(entry.title)}</h3>
             <p class="case-cat">${esc(entry.category)}</p>
             <p class="case-desc">${esc(entry.description)}</p>
             ${entry.note ? `<p class="case-desc">${esc(entry.note)}</p>` : ''}
-            <p class="case-fmt">${entry.media.map((m) => (m.w && m.h ? `${m.w}×${m.h}` : '')).filter(Boolean).join(' · ')}</p>
+            <div class="case-nav">
+              <span class="case-no">${pad(i + 1)} / ${pad(cases.length)}</span>
+              <button class="arrow" type="button" data-step="-1" aria-label="Предыдущий проект"
+                      aria-controls="cases"${i === 0 ? ' disabled' : ''}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m7-7-7 7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+              <button class="arrow" type="button" data-step="1" aria-label="Следующий проект"
+                      aria-controls="cases"${i === cases.length - 1 ? ' disabled' : ''}>
+                <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            </div>
           </div>
           <div>${collageHTML(entry, narrow)}</div>
         </article>
@@ -156,9 +160,6 @@
 
   function setActive(index) {
     at = index;
-    if (counter) counter.textContent = `${pad(index + 1)} / ${pad(cases.length)}`;
-    if (prev) prev.disabled = index === 0;
-    if (next) next.disabled = index === cases.length - 1;
     if (dotsBox) Array.from(dotsBox.children).forEach((dot, i) =>
       dot.setAttribute('aria-selected', String(i === index)));
     if (live) live.textContent = `Проект ${index + 1} из ${cases.length}: ${cases[index].title}.`;
@@ -179,8 +180,10 @@
     Array.from(track.children).forEach((slide) => observer.observe(slide));
   }
 
-  if (prev) prev.addEventListener('click', () => goTo(at - 1));
-  if (next) next.addEventListener('click', () => goTo(at + 1));
+  if (track) track.addEventListener('click', (event) => {
+    const button = event.target.closest('[data-step]');
+    if (button) goTo(at + Number(button.dataset.step));
+  });
   if (track) track.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowLeft') { goTo(at - 1); event.preventDefault(); }
     if (event.key === 'ArrowRight') { goTo(at + 1); event.preventDefault(); }
