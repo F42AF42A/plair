@@ -100,22 +100,10 @@ ul,ol{margin:0}
 /* ── подвал ────────────────────────────────────────────────── */
 .footer{border-top:1px solid var(--line);margin-top:clamp(40px,6vw,90px);
   padding-block:clamp(34px,4.5vw,64px) 32px}
-/* Слово в подвале: два одинаковых слоя друг на друге. Нижний — наш призрачный
-   зелёно-серый, верхний — кадр из случайного кейса, вырезанный по буквам.
-   Верхний открывается протяжкой слева направо. */
-.footer-word{position:relative;display:block;width:fit-content;max-width:100%;
-  font-family:var(--display);font-weight:800;letter-spacing:-.06em;
-  line-height:.82;font-size:clamp(58px,16vw,236px);margin:0;cursor:default}
-.fw-layer{display:block;white-space:nowrap}
-.fw-base{color:var(--surface)}
-.fw-shot{position:absolute;inset:0;color:transparent;
-  background-image:var(--shot,none);background-size:cover;background-position:center;
-  -webkit-background-clip:text;background-clip:text;
-  clip-path:inset(0 100% 0 0);transition:clip-path .85s cubic-bezier(.65,0,.2,1)}
-.footer-word.is-on .fw-shot{clip-path:inset(0 0 0 0)}
-.fw-layer b{display:inline-block;font-weight:inherit;transform:translateY(.42em);opacity:0;
-  transition:transform .62s cubic-bezier(.2,.9,.25,1),opacity .42s ease}
-.footer-word.is-in b{transform:none;opacity:1}
+/* Слово собирается из частиц: буквы рисуются в невидимый холст, из его
+   пикселей рождаются точки, каждая пружиной держится за своё место. */
+.footer-word{display:block;width:100%;height:clamp(140px,24vw,360px);margin:0}
+
 .footer-row{display:flex;gap:26px;justify-content:space-between;flex-wrap:wrap;align-items:flex-end;
   margin-top:clamp(18px,2.4vw,36px)}
 .footer nav{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
@@ -225,6 +213,4 @@ body.dialog-open{overflow:hidden}
      но ничего не крутится. */
   .cube,.cube-lift,.cube-plinth,.cube-glow{animation:none}
   .cube{transform:rotateX(-22deg) rotateY(38deg)}
-  .fw-layer b{transform:none;opacity:1;transition:none}
-  .fw-shot{transition:none}
 }

@@ -389,52 +389,122 @@
   }
 
   const word = $('footer-word');
-  if (word && cases.length) {
-    const WORD = 'PLAIR';
-    // Буквы поднимаются по очереди, поэтому каждая — отдельный элемент.
-    // Фон при этом лежит на слое целиком и не едет вместе с буквой:
-    // буквы работают окном в кадр, а не переносят его на себе.
-    word.querySelectorAll('.fw-layer').forEach((layer) => {
-      layer.innerHTML = WORD.split('').map((letter, i) =>
-        `<b style="transition-delay:${(i * 0.075).toFixed(3)}s">${letter}</b>`).join('');
+  if (word && word.getContext) {
+    const wctx = word.getContext('2d');
+    const ACCENT2 = '52,199,89';
+    let bits = [], ww = 0, wh = 0, wdpr = 1, wptr = null, wlive = false, wprev = 0;
+
+    async function buildWord() {
+      const box = word.getBoundingClientRect();
+      ww = Math.round(box.width); wh = Math.round(box.height);
+      if (!ww || !wh) return;
+      wdpr = Math.min(2, window.devicePixelRatio || 1);
+      word.width = Math.round(ww * wdpr); word.height = Math.round(wh * wdpr);
+      wctx.setTransform(wdpr, 0, 0, wdpr, 0, 0);
+
+      // Ждём шрифт: без него надпись обмеряется запасной гарнитурой,
+      // и частицы лягут по чужим буквам.
+      try { await document.fonts.ready; } catch (e) { /* не критично */ }
+
+      // Слово рисуем в отдельный холст и читаем из него пиксели.
+      const off = document.createElement('canvas');
+      off.width = word.width; off.height = word.height;
+      const octx = off.getContext('2d', { willReadFrequently: true });
+      octx.setTransform(wdpr, 0, 0, wdpr, 0, 0);
+      octx.fillStyle = '#fff';
+      octx.textAlign = 'center';
+      octx.textBaseline = 'middle';
+      // Подбираем кегль под ширину: слово должно занять полосу целиком.
+      let size = Math.round(wh * 1.1);
+      const fit = () => { octx.font = `800 ${size}px 'Unbounded','Golos Text',Arial,sans-serif`;
+        return octx.measureText('PLAIR').width; };
+      const target = ww * 0.92;
+      let guard = 0;
+      while (fit() > target && size > 12 && guard++ < 60) size -= Math.max(1, Math.round(size * 0.04));
+      while (fit() < target && size < wh * 1.6 && guard++ < 120) size += 1;
+      // По ширине слово уже вписано, но прописные буквы могут упереться
+      // в верх и низ полосы. Дожимаем по реальной высоте глифов.
+      // fit() внутри обязателен: без него шрифт остаётся от прошлого шага,
+      // высота не меняется, и цикл ужимает слово до упора вслепую.
+      const capOf = () => { fit(); const m = octx.measureText('PLAIR');
+        return (m.actualBoundingBoxAscent || 0) + (m.actualBoundingBoxDescent || 0); };
+      while (capOf() > wh * 0.78 && size > 12 && guard++ < 200) size -= 1;
+      fit();
+      octx.fillText('PLAIR', ww / 2, wh / 2);
+
+      const data = octx.getImageData(0, 0, off.width, off.height).data;
+      const gap = ww < 700 ? 4 : 5;
+      bits = [];
+      for (let y = 0; y < wh; y += gap) {
+        for (let x = 0; x < ww; x += gap) {
+          const i = ((Math.round(y * wdpr) * off.width) + Math.round(x * wdpr)) * 4 + 3;
+          if (data[i] < 130) continue;
+          bits.push({
+            hx: x, hy: y,
+            // Старт вразброс: на первом показе слово собирается из россыпи.
+            x: ww / 2 + (Math.random() - 0.5) * ww * 1.4,
+            y: wh / 2 + (Math.random() - 0.5) * wh * 3,
+            vx: 0, vy: 0, a: 0.5 + Math.random() * 0.5, s: gap * 0.44
+          });
+        }
+      }
+      if (reduceMotion.matches) bits.forEach((b) => { b.x = b.hx; b.y = b.hy; });
+    }
+
+    function drawWord(dt) {
+      wctx.clearRect(0, 0, ww, wh);
+      const damp = Math.pow(0.84, dt);
+      for (const b of bits) {
+        if (dt) {
+          b.vx += (b.hx - b.x) * 0.055 * dt;
+          b.vy += (b.hy - b.y) * 0.055 * dt;
+          if (wptr) {
+            const dx = b.x - wptr.x, dy = b.y - wptr.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist < 110 && dist > 0.5) {
+              // Отталкивание слабеет к краю зоны, иначе на её границе
+              // частицы дёргаются рывком.
+              const f = (1 - dist / 110) * 3.4;
+              b.vx += (dx / dist) * f * dt;
+              b.vy += (dy / dist) * f * dt;
+            }
+          }
+          b.vx *= damp; b.vy *= damp;
+          b.x += b.vx * dt; b.y += b.vy * dt;
+        }
+        wctx.fillStyle = `rgba(${ACCENT2},${b.a})`;
+        wctx.fillRect(b.x, b.y, b.s, b.s);
+      }
+    }
+
+    function wordFrame(now) {
+      if (!wlive) return;
+      const dt = Math.min(3, (now - wprev) / 16.67);
+      wprev = now;
+      drawWord(dt);
+      requestAnimationFrame(wordFrame);
+    }
+    function wordRun(on) {
+      if (on === wlive) return;
+      wlive = on;
+      if (on) { wprev = performance.now(); requestAnimationFrame(wordFrame); }
+    }
+
+    buildWord().then(() => {
+      drawWord(0);
+      if (reduceMotion.matches) return;
+      new IntersectionObserver((entries) => entries.forEach((e) => wordRun(e.isIntersecting)),
+        { threshold: 0 }).observe(word);
     });
-
-    // Для подложки берём первый кадр случайного кейса. Узкая копия, если она
-    // есть: на всю ширину подвала хватает с запасом, а тянуть двухтысячный
-    // оригинал ради фона незачем.
-    const pickShot = () => {
-      const entry = cases[Math.floor(Math.random() * cases.length)];
-      const item = entry.media.find((m) => m.type !== 'video') || entry.media[0];
-      const src = safeMedia(item.src);
-      if (!src) return '';
-      return Number(item.w) > 800 && /\.webp$/i.test(item.src)
-        ? safeMedia(item.src.replace(/\.webp$/i, '-800.webp')) : src;
-    };
-    const setShot = () => {
-      const shot = pickShot();
-      if (shot) word.style.setProperty('--shot', `url("${shot}")`);
-    };
-    setShot();
-
-    const reveal = new IntersectionObserver((entries, self) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        word.classList.add('is-in');
-        // Протяжка идёт после того, как последняя буква встала на место.
-        setTimeout(() => word.classList.add('is-on'), reduceMotion.matches ? 0 : 700);
-        self.disconnect();
-      });
-    }, { threshold: 0.4 });
-    reveal.observe(word);
-
-    // Наведение меняет кадр: протяжка уезжает, подставляется другой кейс,
-    // протяжка возвращается.
-    let swapping = false;
-    word.addEventListener('pointerenter', () => {
-      if (swapping || !word.classList.contains('is-on') || reduceMotion.matches) return;
-      swapping = true;
-      word.classList.remove('is-on');
-      setTimeout(() => { setShot(); word.classList.add('is-on'); swapping = false; }, 430);
+    word.addEventListener('pointermove', (event) => {
+      const box = word.getBoundingClientRect();
+      wptr = { x: event.clientX - box.left, y: event.clientY - box.top };
+    });
+    word.addEventListener('pointerleave', () => { wptr = null; });
+    let wordTimer = null;
+    window.addEventListener('resize', () => {
+      clearTimeout(wordTimer);
+      wordTimer = setTimeout(() => buildWord().then(() => drawWord(0)), 200);
     });
   }
 
