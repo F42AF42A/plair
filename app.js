@@ -446,6 +446,21 @@
     const ACCENT2 = '52,199,89';
     let bits = [], ww = 0, wh = 0, wdpr = 1, wptr = null, wlive = false, wprev = 0;
 
+    // Маска знака — одна на всё: грузим её однажды и держим.
+    let logoImg = null, logoTry = null;
+    function loadLogo() {
+      if (logoImg) return Promise.resolve(logoImg);
+      if (logoTry) return logoTry;
+      logoTry = new Promise((done) => {
+        const img = new Image();
+        img.decoding = 'async';
+        img.onload = () => { logoImg = img; done(img); };
+        img.onerror = () => done(null);
+        img.src = '/assets/logo-mask.webp';
+      });
+      return logoTry;
+    }
+
     async function buildWord() {
       const box = word.getBoundingClientRect();
       ww = Math.round(box.width); wh = Math.round(box.height);
@@ -454,38 +469,30 @@
       word.width = Math.round(ww * wdpr); word.height = Math.round(wh * wdpr);
       wctx.setTransform(wdpr, 0, 0, wdpr, 0, 0);
 
-      // Ждём шрифт: без него надпись обмеряется запасной гарнитурой,
-      // и частицы лягут по чужим буквам.
-      try { await document.fonts.ready; } catch (e) { /* не критично */ }
+      // Раньше здесь набиралась надпись шрифтом. Теперь источник —
+      // фирменный знак: та же маска, что стоит в шапке и в заставке,
+      // так что в подвале собирается именно логотип, а не слово,
+      // набранное похожей гарнитурой.
+      const logo = await loadLogo();
+      if (!logo) { bits = []; return; }
 
-      // Слово рисуем в отдельный холст и читаем из него пиксели.
+      // Знак рисуем в отдельный холст и читаем из него пиксели.
       const off = document.createElement('canvas');
       off.width = word.width; off.height = word.height;
       const octx = off.getContext('2d', { willReadFrequently: true });
       octx.setTransform(wdpr, 0, 0, wdpr, 0, 0);
-      octx.fillStyle = '#fff';
-      octx.textAlign = 'center';
-      octx.textBaseline = 'middle';
-      // Подбираем кегль под ширину: слово должно занять полосу целиком.
-      let size = Math.round(wh * 1.1);
-      const fit = () => { octx.font = `800 ${size}px 'Unbounded','Golos Text',Arial,sans-serif`;
-        return octx.measureText('PLAIR').width; };
-      const target = ww * 0.92;
-      let guard = 0;
-      while (fit() > target && size > 12 && guard++ < 60) size -= Math.max(1, Math.round(size * 0.04));
-      while (fit() < target && size < wh * 1.6 && guard++ < 120) size += 1;
-      // По ширине слово уже вписано, но прописные буквы могут упереться
-      // в верх и низ полосы. Дожимаем по реальной высоте глифов.
-      // fit() внутри обязателен: без него шрифт остаётся от прошлого шага,
-      // высота не меняется, и цикл ужимает слово до упора вслепую.
-      const capOf = () => { fit(); const m = octx.measureText('PLAIR');
-        return (m.actualBoundingBoxAscent || 0) + (m.actualBoundingBoxDescent || 0); };
-      while (capOf() > wh * 0.78 && size > 12 && guard++ < 200) size -= 1;
-      fit();
-      octx.fillText('PLAIR', ww / 2, wh / 2);
+
+      // В маске под знаком есть пустая полоса — в шапке она часть
+      // лока, здесь бы просто съела низ холста. Берём только ту часть
+      // картинки, где есть краска, и вписываем по меньшей стороне.
+      const INK_H = 307 / 374;
+      const src = { w: logo.width, h: Math.round(logo.height * INK_H) };
+      const k = Math.min(ww * 0.98 / src.w, wh * 0.96 / src.h);
+      const lw = src.w * k, lh = src.h * k;
+      octx.drawImage(logo, 0, 0, src.w, src.h, (ww - lw) / 2, (wh - lh) / 2, lw, lh);
 
       const data = octx.getImageData(0, 0, off.width, off.height).data;
-      const gap = ww < 700 ? 4 : 5;
+      const gap = ww < 700 ? 3 : 4;
       bits = [];
       for (let y = 0; y < wh; y += gap) {
         for (let x = 0; x < ww; x += gap) {
@@ -564,7 +571,7 @@
   const spiderHost = document.querySelector('.spider-fx');
   if (spiderHost && !reduceMotion.matches
       && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
-    import('/spider.js?v=9').then((m) => m.mount(spiderHost)).catch(() => {});
+    import('/spider.js?v=10').then((m) => m.mount(spiderHost)).catch(() => {});
   }
 
   if (!dialog || !form) return;
@@ -577,7 +584,7 @@
     botLoaded = true;
     const host = document.querySelector('.walker');
     if (!host) return;
-    import('/robot.js?v=9').then((m) => m.mount(host)).catch(() => {});
+    import('/robot.js?v=10').then((m) => m.mount(host)).catch(() => {});
   };
 
   const openers = Array.from(document.querySelectorAll('#contact-open,[data-contact-open]'));

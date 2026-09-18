@@ -118,9 +118,12 @@ html[data-input="pointer"] .button.solid:focus-visible:not(:hover){
 /* ── подвал ────────────────────────────────────────────────── */
 .footer{border-top:1px solid var(--line);margin-top:clamp(40px,6vw,90px);
   padding-block:clamp(34px,4.5vw,64px) 32px}
-/* Слово собирается из частиц: буквы рисуются в невидимый холст, из его
-   пикселей рождаются точки, каждая пружиной держится за своё место. */
-.footer-word{display:block;width:100%;height:clamp(140px,24vw,360px);margin:0}
+/* Знак собирается из частиц: маска логотипа рисуется в невидимый холст,
+   из его пикселей рождаются точки, каждая пружиной держится за своё
+   место. Пропорции холста — пропорции знака, иначе он терялся бы
+   посреди широкой полосы. */
+.footer-word{display:block;width:min(100%,760px);margin-inline:auto;
+  aspect-ratio:800/307;height:auto}
 
 .footer-row{display:flex;gap:26px;justify-content:space-between;flex-wrap:wrap;align-items:flex-end;
   margin-top:clamp(18px,2.4vw,36px)}
