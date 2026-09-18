@@ -214,65 +214,76 @@
   if (fx && hero) {
     const ctx2d = fx.getContext('2d', { alpha: true });
     const ACCENT = '52,199,89';
-    let dots = [], w = 0, h = 0, dpr = 1, link = 130, pointer = null, alive = false, prev = 0;
+    let dots = [], w = 0, h = 0, dpr = 1, pointer = null, alive = false, prev = 0, clock = 0;
 
     function build() {
       const box = hero.getBoundingClientRect();
       w = Math.round(box.width); h = Math.round(box.height);
       if (!w || !h) return;
-      // На экране с плотным пикселем рисуем крупнее и ужимаем стилем,
-      // иначе точки и линии выходят мылом.
+      // На плотном экране рисуем крупнее и ужимаем стилем, иначе точки мылит.
       dpr = Math.min(2, window.devicePixelRatio || 1);
       fx.width = Math.round(w * dpr); fx.height = Math.round(h * dpr);
       ctx2d.setTransform(dpr, 0, 0, dpr, 0, 0);
       const narrow = w < 700;
-      link = narrow ? 92 : 132;
-      const count = Math.max(narrow ? 18 : 34, Math.min(narrow ? 34 : 88, Math.round(w * h / 15000)));
-      dots = Array.from({ length: count }, () => ({
-        x: Math.random() * w, y: Math.random() * h,
-        vx: (Math.random() - 0.5) * 0.22, vy: (Math.random() - 0.5) * 0.22,
-        r: 0.7 + Math.random() * 1.5, a: 0.25 + Math.random() * 0.45
-      }));
+      const count = Math.max(narrow ? 32 : 64, Math.min(narrow ? 54 : 140, Math.round(w * h / 9200)));
+      dots = Array.from({ length: count }, () => {
+        const x = Math.random() * w, y = Math.random() * h;
+        // hx/hy — «дом» точки. Пружина к нему держит поле от схлопывания:
+        // колодец у курсора притягивает, дом возвращает.
+        return { x, y, px: x, py: y, hx: x, hy: y,
+          drift: Math.random() * Math.PI * 2, span: 8 + Math.random() * 22,
+          vx: 0, vy: 0, r: 0.8 + Math.random() * 1.7, a: 0.34 + Math.random() * 0.46 };
+      });
     }
 
     function draw(dt) {
+      clock += dt;
       ctx2d.clearRect(0, 0, w, h);
+      // Без курсора поле притягивает невидимая точка, гуляющая по фигуре
+      // Лиссажу: на телефоне наведения нет, а поле должно жить.
+      const well = pointer || {
+        x: w * (0.5 + 0.34 * Math.sin(clock / 260)),
+        y: h * (0.5 + 0.3 * Math.sin(clock / 167)),
+        soft: true
+      };
+      const pull = well.soft ? 900 : 3400;
+      const reach = well.soft ? 420 : 320;
+      const damp = Math.pow(0.86, dt);
+
       for (const d of dots) {
-        d.x += d.vx * dt; d.y += d.vy * dt;
-        // Уходя за край, точка появляется с противоположного: поле не редеет.
-        if (d.x < -6) d.x = w + 6; else if (d.x > w + 6) d.x = -6;
-        if (d.y < -6) d.y = h + 6; else if (d.y > h + 6) d.y = -6;
-        if (pointer) {
-          const dx = pointer.x - d.x, dy = pointer.y - d.y;
-          const dist = Math.hypot(dx, dy);
-          if (dist < 180 && dist > 1) {
-            d.vx += (dx / dist) * 0.0016 * dt;
-            d.vy += (dy / dist) * 0.0016 * dt;
-          }
+        d.px = d.x; d.py = d.y;
+        // Дом медленно дышит, иначе поле в покое выглядит замороженным.
+        d.drift += 0.004 * dt;
+        const hx = d.hx + Math.cos(d.drift) * d.span;
+        const hy = d.hy + Math.sin(d.drift * 0.8) * d.span * 0.6;
+        d.vx += (hx - d.x) * 0.012 * dt;
+        d.vy += (hy - d.y) * 0.012 * dt;
+
+        const dx = well.x - d.x, dy = well.y - d.y;
+        const dist = Math.hypot(dx, dy);
+        if (dist < reach) {
+          // Смягчение в знаменателе: вплотную к центру сила иначе уходит
+          // в бесконечность и точку выстреливает за экран.
+          const f = pull / (dist * dist + 2200) * (1 - dist / reach);
+          d.vx += (dx * f - dy * f * 0.42) * dt;
+          d.vy += (dy * f + dx * f * 0.42) * dt;
         }
-        // Притяжение к курсору не должно разгонять точки без предела.
+        d.vx *= damp; d.vy *= damp;
         const speed = Math.hypot(d.vx, d.vy);
-        if (speed > 0.55) { d.vx = d.vx / speed * 0.55; d.vy = d.vy / speed * 0.55; }
+        if (speed > 2.6) { d.vx = d.vx / speed * 2.6; d.vy = d.vy / speed * 2.6; }
+        d.x += d.vx * dt; d.y += d.vy * dt;
       }
-      ctx2d.lineWidth = 1;
-      for (let i = 0; i < dots.length; i++) {
-        for (let j = i + 1; j < dots.length; j++) {
-          const dist = Math.hypot(dots[i].x - dots[j].x, dots[i].y - dots[j].y);
-          if (dist > link) continue;
-          ctx2d.strokeStyle = `rgba(${ACCENT},${(1 - dist / link) * 0.17})`;
-          ctx2d.beginPath();
-          ctx2d.moveTo(dots[i].x, dots[i].y); ctx2d.lineTo(dots[j].x, dots[j].y); ctx2d.stroke();
-        }
-        if (pointer) {
-          const dist = Math.hypot(pointer.x - dots[i].x, pointer.y - dots[i].y);
-          if (dist < 180) {
-            ctx2d.strokeStyle = `rgba(${ACCENT},${(1 - dist / 180) * 0.3})`;
-            ctx2d.beginPath();
-            ctx2d.moveTo(dots[i].x, dots[i].y); ctx2d.lineTo(pointer.x, pointer.y); ctx2d.stroke();
-          }
-        }
-      }
+
+      // Хвост от прошлого положения: чем быстрее летит точка, тем он заметнее.
+      ctx2d.lineCap = 'round';
       for (const d of dots) {
+        const speed = Math.hypot(d.x - d.px, d.y - d.py);
+        if (speed > 0.6) {
+          ctx2d.strokeStyle = `rgba(${ACCENT},${Math.min(0.32, speed * 0.075) * d.a * 2})`;
+          ctx2d.lineWidth = d.r * 0.9;
+          ctx2d.beginPath();
+          ctx2d.moveTo(d.px, d.py); ctx2d.lineTo(d.x, d.y); ctx2d.stroke();
+        }
         ctx2d.fillStyle = `rgba(${ACCENT},${d.a})`;
         ctx2d.beginPath(); ctx2d.arc(d.x, d.y, d.r, 0, Math.PI * 2); ctx2d.fill();
       }
@@ -281,7 +292,7 @@
     function frame(now) {
       if (!alive) return;
       // Шаг в кадрах по 60 Гц: на быстром мониторе поле не ускоряется,
-      // а после долгой паузы точки не прыгают через пол-экрана.
+      // а после фоновой вкладки точки не прыгают через пол-экрана.
       const dt = Math.min(3, (now - prev) / 16.67);
       prev = now;
       draw(dt);
