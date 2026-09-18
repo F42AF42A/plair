@@ -503,11 +503,12 @@
           if (data[i] < 130) continue;
           bits.push({
             hx: x, hy: y,
-            // Старт вразброс по всей полосе: знак собирается из россыпи,
-            // раскиданной на всю ширину подвала, а не из узкой полоски
-            // посередине.
-            x: Math.random() * ww,
-            y: wh / 2 + (Math.random() - 0.5) * wh * 2.6,
+            // Старт вразброс по всей полосе. Разброс не равномерный, а
+            // колоколом: сумма трёх случайных чисел сгущает россыпь к
+            // середине и разрежает её к краям области — облако тает,
+            // а не обрывается по линейке.
+            x: ww * (0.5 + (Math.random() + Math.random() + Math.random() - 1.5) * 0.44),
+            y: wh * (0.5 + (Math.random() + Math.random() + Math.random() - 1.5) * 0.46),
             vx: 0, vy: 0, a: 0.5 + Math.random() * 0.5, s: gap * 0.44
           });
         }
@@ -560,11 +561,14 @@
       new IntersectionObserver((entries) => entries.forEach((e) => wordRun(e.isIntersecting)),
         { threshold: 0 }).observe(word);
     });
-    word.addEventListener('pointermove', (event) => {
+    window.addEventListener('pointermove', (event) => {
       const box = word.getBoundingClientRect();
-      wptr = { x: event.clientX - box.left, y: event.clientY - box.top };
-    });
-    word.addEventListener('pointerleave', () => { wptr = null; });
+      const x = event.clientX - box.left, y = event.clientY - box.top;
+      // Зона влияния чуть шире холста, иначе частицы у самой кромки
+      // перестают реагировать ровно на границе.
+      wptr = (x > -120 && x < box.width + 120 && y > -120 && y < box.height + 120)
+        ? { x, y } : null;
+    }, { passive: true });
     let wordTimer = null;
     window.addEventListener('resize', () => {
       clearTimeout(wordTimer);
@@ -576,7 +580,7 @@
   const spiderHost = document.querySelector('.spider-fx');
   if (spiderHost && !reduceMotion.matches
       && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
-    import('/spider.js?v=12').then((m) => m.mount(spiderHost)).catch(() => {});
+    import('/spider.js?v=13').then((m) => m.mount(spiderHost)).catch(() => {});
   }
 
   if (!dialog || !form) return;
@@ -589,7 +593,7 @@
     botLoaded = true;
     const host = document.querySelector('.walker');
     if (!host) return;
-    import('/robot.js?v=12').then((m) => m.mount(host)).catch(() => {});
+    import('/robot.js?v=13').then((m) => m.mount(host)).catch(() => {});
   };
 
   const openers = Array.from(document.querySelectorAll('#contact-open,[data-contact-open]'));

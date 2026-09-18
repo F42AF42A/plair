@@ -124,9 +124,16 @@ html[data-input="pointer"] .button.solid:focus-visible:not(:hover){
    из его пикселей рождаются точки, каждая пружиной держится за своё
    место. Пропорции холста — пропорции знака, иначе он терялся бы
    посреди широкой полосы. */
-.footer-word{display:block;width:100%;height:clamp(190px,28vw,410px);margin:0}
+/* Холст шире и выше своего места в потоке: отрицательные поля выпускают
+   его за серую линию сверху и за строку ссылок снизу, а занимаемая
+   высота остаётся прежней. Курсор он не перехватывает — иначе перекрыл
+   бы ссылки подвала; координаты берём из окна. */
+.footer-word{display:block;width:100%;--bleed:clamp(50px,7vw,120px);
+  height:calc(clamp(190px,28vw,410px) + var(--bleed) * 2);
+  margin-block:calc(-1 * var(--bleed));pointer-events:none}
 
-.footer-row{display:flex;gap:26px;justify-content:space-between;flex-wrap:wrap;align-items:flex-end;
+.footer-row{position:relative;z-index:1;
+  display:flex;gap:26px;justify-content:space-between;flex-wrap:wrap;align-items:flex-end;
   margin-top:0}
 .footer nav{display:flex;gap:18px;flex-wrap:wrap;font-size:14px;color:var(--muted)}
 .footer nav a{display:inline-flex;align-items:center;min-height:44px;transition:color .2s}
