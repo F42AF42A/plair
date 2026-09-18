@@ -209,6 +209,56 @@
     });
   }
 
+  const word = $('footer-word');
+  if (word && cases.length) {
+    const WORD = 'PLAIR';
+    // Буквы поднимаются по очереди, поэтому каждая — отдельный элемент.
+    // Фон при этом лежит на слое целиком и не едет вместе с буквой:
+    // буквы работают окном в кадр, а не переносят его на себе.
+    word.querySelectorAll('.fw-layer').forEach((layer) => {
+      layer.innerHTML = WORD.split('').map((letter, i) =>
+        `<b style="transition-delay:${(i * 0.075).toFixed(3)}s">${letter}</b>`).join('');
+    });
+
+    // Для подложки берём первый кадр случайного кейса. Узкая копия, если она
+    // есть: на всю ширину подвала хватает с запасом, а тянуть двухтысячный
+    // оригинал ради фона незачем.
+    const pickShot = () => {
+      const entry = cases[Math.floor(Math.random() * cases.length)];
+      const item = entry.media.find((m) => m.type !== 'video') || entry.media[0];
+      const src = safeMedia(item.src);
+      if (!src) return '';
+      return Number(item.w) > 800 && /\.webp$/i.test(item.src)
+        ? safeMedia(item.src.replace(/\.webp$/i, '-800.webp')) : src;
+    };
+    const setShot = () => {
+      const shot = pickShot();
+      if (shot) word.style.setProperty('--shot', `url("${shot}")`);
+    };
+    setShot();
+
+    const reveal = new IntersectionObserver((entries, self) => {
+      entries.forEach((entry) => {
+        if (!entry.isIntersecting) return;
+        word.classList.add('is-in');
+        // Протяжка идёт после того, как последняя буква встала на место.
+        setTimeout(() => word.classList.add('is-on'), reduceMotion.matches ? 0 : 700);
+        self.disconnect();
+      });
+    }, { threshold: 0.4 });
+    reveal.observe(word);
+
+    // Наведение меняет кадр: протяжка уезжает, подставляется другой кейс,
+    // протяжка возвращается.
+    let swapping = false;
+    word.addEventListener('pointerenter', () => {
+      if (swapping || !word.classList.contains('is-on') || reduceMotion.matches) return;
+      swapping = true;
+      word.classList.remove('is-on');
+      setTimeout(() => { setShot(); word.classList.add('is-on'); swapping = false; }, 430);
+    });
+  }
+
   if (!dialog || !form) return;
 
   const openers = Array.from(document.querySelectorAll('#contact-open,[data-contact-open]'));
