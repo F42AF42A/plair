@@ -81,13 +81,31 @@
 
 /* ── коллаж кейса ──────────────────────────────────────────── */
 .collage{position:relative;background:var(--pane);border-radius:12px;padding:clamp(8px,.9vw,14px);
-  display:flex;flex-direction:column;gap:clamp(8px,.85vw,12px);isolation:isolate;overflow:hidden}
-.collage-wash{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;
-  filter:blur(48px) saturate(.6);opacity:.3;transform:scale(1.25);z-index:-1}
+  display:flex;flex-direction:column;gap:clamp(8px,.85vw,12px);isolation:isolate;
+  transform-style:preserve-3d;will-change:transform}
+/* Размытая подложка живёт в своей коробке: обрезать её на самом коллаже
+   нельзя — overflow:hidden выключает трёхмерность у всего, что внутри. */
+.collage-wash-box{position:absolute;inset:0;border-radius:12px;overflow:hidden;
+  transform:translateZ(-1px);z-index:-1}
+.collage-wash{width:100%;height:100%;object-fit:cover;
+  filter:blur(48px) saturate(.6);opacity:.3;transform:scale(1.25)}
 .collage-row{display:flex;gap:clamp(8px,.85vw,12px);width:100%;margin-inline:auto;
-  max-width:calc(var(--cap) * var(--sum))}
-.collage-row figure{margin:0;flex:var(--ar) 1 0;min-width:0}
-.collage-row img{width:100%;height:auto;border-radius:7px;box-shadow:0 14px 34px rgba(0,0,0,.5)}
+  max-width:calc(var(--cap) * var(--sum));transform-style:preserve-3d}
+.collage-row figure{margin:0;flex:var(--ar) 1 0;min-width:0;
+  transition:transform .35s cubic-bezier(.22,.61,.36,1)}
+.collage-row img{width:100%;height:auto;border-radius:7px;box-shadow:0 14px 34px rgba(0,0,0,.5);
+  transition:box-shadow .35s ease}
+
+/* ── карточка кейса наклоняется под курсором ───────────────── */
+/* Коллаж лежит в перспективе: курсор задаёт угол, кадры приподнимаются
+   над подложкой, и плоская картинка становится сценой с глубиной.
+   Считается только на устройствах с настоящим курсором. */
+.tilt{perspective:1500px}
+.tilt .collage{transition:transform .5s cubic-bezier(.22,.61,.36,1)}
+.tilt.is-live .collage{transition:transform .08s linear}
+.tilt.is-live .collage-row figure{transform:translateZ(var(--lift,34px))}
+.tilt.is-live .collage-row img{box-shadow:0 26px 54px rgba(0,0,0,.62)}
+@media (hover:none),(pointer:coarse){.tilt{perspective:none}}
 
 /* ── карусель проектов ─────────────────────────────────────── */
 /* Раньше кейсы шли стопкой сверху вниз: при семи проектах это уже длинная
@@ -153,7 +171,12 @@
 /* ── внутренние страницы ───────────────────────────────────── */
 .breadcrumbs{padding-top:26px;color:var(--dim);font-size:13px;line-height:1.9}
 .breadcrumbs a:hover{color:var(--accent)}
-.intro{padding-block:clamp(34px,5vw,72px) clamp(26px,3.4vw,48px);max-width:1000px}
+.intro{position:relative;padding-block:clamp(34px,5vw,72px) clamp(26px,3.4vw,48px);max-width:1000px}
+/* Паук бегает по всему первому экрану, но текст перекрывать не должен:
+   холст лежит под ним и курсор не перехватывает. */
+.spider-fx{position:absolute;inset:-14px 0;z-index:-1;pointer-events:none;overflow:hidden}
+.spider-fx canvas{display:block;width:100%;height:100%}
+.intro>:not(.spider-fx){position:relative}
 .intro h1{font-size:clamp(34px,6vw,84px);font-weight:700;letter-spacing:-.05em;line-height:.98;margin:18px 0}
 .lead{font-size:clamp(17px,1.6vw,23px);line-height:1.48;max-width:60ch;color:var(--muted)}
 .intro .text-link{margin-top:6px}

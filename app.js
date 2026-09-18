@@ -9,6 +9,19 @@
   const submit = $('contact-submit');
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
+  /* Откуда пришёл фокус. Браузеры после касания часто оставляют на
+     кнопке :focus-visible, и к её рамке добавляется вторая обводка.
+     Помечаем способ ввода — CSS по этой пометке прячет кольцо для
+     пальца и мыши и оставляет его для клавиатуры. */
+  const root = document.documentElement;
+  const markInput = (kind) => { if (root.dataset.input !== kind) root.dataset.input = kind; };
+  const KEY_NAV = new Set(['Tab', 'Enter', ' ', 'Escape', 'Home', 'End', 'PageUp', 'PageDown']);
+  addEventListener('pointerdown', () => markInput('pointer'), { capture: true, passive: true });
+  addEventListener('keydown', (event) => {
+    if (event.metaKey || event.ctrlKey || event.altKey) return;
+    if (KEY_NAV.has(event.key) || event.key.startsWith('Arrow')) markInput('key');
+  }, { capture: true });
+
   const intro = $('intro-splash');
   if (intro) {
     try {
@@ -73,7 +86,7 @@
     ];
   }
 
-  function frameHTML(item, entry) {
+  function frameHTML(item, entry, lift) {
     const src = safeMedia(item.src);
     if (!src) return '';
     const alt = esc(item.alt || entry.title);
@@ -83,7 +96,7 @@
     }
     const srcset = srcsetFor(item);
     const dims = Number(item.w) > 0 && Number(item.h) > 0 ? ` width="${item.w}" height="${item.h}"` : '';
-    return `<figure style="--ar:${ratio(item).toFixed(3)}"><img src="${esc(src)}" alt="${alt}"${dims}
+    return `<figure style="--ar:${ratio(item).toFixed(3)};--lift:${lift}px"><img src="${esc(src)}" alt="${alt}"${dims}
       ${srcset ? `srcset="${esc(srcset)}" sizes="(max-width: 980px) 92vw, 46vw"` : ''}
       loading="lazy" decoding="async"></figure>`;
   }
@@ -93,10 +106,10 @@
     const rows = rowsFor(entry.media, narrow).map((row) => {
       const sum = row.items.reduce((acc, item) => acc + ratio(item), 0);
       return `<div class="collage-row" style="--sum:${sum.toFixed(3)};--cap:${row.cap}px">
-        ${row.items.map((item) => frameHTML(item, entry)).join('')}</div>`;
+        ${row.items.map((item, i) => frameHTML(item, entry, 26 + i * 12)).join('')}</div>`;
     }).join('');
     return `<div class="collage">
-      ${wash ? `<img class="collage-wash" src="${esc(wash)}" alt="" aria-hidden="true">` : ''}${rows}</div>`;
+      ${wash ? `<div class="collage-wash-box"><img class="collage-wash" src="${esc(wash)}" alt="" aria-hidden="true"></div>` : ''}${rows}</div>`;
   }
 
   const track = $('cases');
@@ -127,7 +140,7 @@
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </div>
           </div>
-          <div>${collageHTML(entry, narrow)}</div>
+          <div class="tilt">${collageHTML(entry, narrow)}</div>
         </article>
       </section>`).join('');
 
@@ -141,7 +154,46 @@
       });
     }
     watch();
+    bindTilt();
     goTo(at, 'auto');
+  }
+
+  /* Наклон коллажа под курсором.
+     Курсор задаёт два угла, коллаж поворачивается, кадры внутри
+     приподнимаются над подложкой — карточка перестаёт быть плоской.
+     Слушаем только там, где курсор настоящий: на тач-экранах наводить
+     нечем, а на «уменьшить движение» эффект выключен совсем. */
+  const MAX_TILT = 8;
+  function bindTilt() {
+    if (reduceMotion.matches) return;
+    if (!window.matchMedia('(hover:hover) and (pointer:fine)').matches) return;
+    track.querySelectorAll('.tilt').forEach((box) => {
+      const collage = box.querySelector('.collage');
+      if (!collage || box.dataset.tilt === '1') return;
+      box.dataset.tilt = '1';
+      let frame = 0;
+      const rest = () => {
+        cancelAnimationFrame(frame);
+        box.classList.remove('is-live');
+        collage.style.transform = '';
+      };
+      box.addEventListener('pointermove', (event) => {
+        if (event.pointerType !== 'mouse') return;
+        cancelAnimationFrame(frame);
+        frame = requestAnimationFrame(() => {
+          const r = collage.getBoundingClientRect();
+          if (!r.width || !r.height) return;
+          const ry = ((event.clientX - r.left) / r.width - .5) * 2 * MAX_TILT;
+          const rx = -((event.clientY - r.top) / r.height - .5) * 2 * MAX_TILT;
+          box.classList.add('is-live');
+          collage.style.transform = `rotateY(${ry.toFixed(2)}deg) rotateX(${rx.toFixed(2)}deg)`;
+        });
+      });
+      box.addEventListener('pointerleave', rest);
+      box.addEventListener('pointercancel', rest);
+      // Пока лента едет, наклон только мешает целиться.
+      track.addEventListener('scroll', rest, { passive: true });
+    });
   }
 
   function goTo(index, behavior) {
@@ -508,6 +560,13 @@
     });
   }
 
+  // Паук на первом экране «О студии»: грузится только там, где есть блок.
+  const spiderHost = document.querySelector('.spider-fx');
+  if (spiderHost && !reduceMotion.matches
+      && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
+    import('/spider.js?v=6').then((m) => m.mount(spiderHost)).catch(() => {});
+  }
+
   if (!dialog || !form) return;
 
   // Робота грузим ленивo: three.js весит прилично, и до первого открытия
@@ -518,7 +577,7 @@
     botLoaded = true;
     const host = document.querySelector('.walker');
     if (!host) return;
-    import('/robot.js?v=5').then((m) => m.mount(host)).catch(() => {});
+    import('/robot.js?v=6').then((m) => m.mount(host)).catch(() => {});
   };
 
   const openers = Array.from(document.querySelectorAll('#contact-open,[data-contact-open]'));
