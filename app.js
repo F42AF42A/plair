@@ -221,10 +221,10 @@
     $('contact-close').focus({ preventScroll: true });
   }));
   $('contact-close').addEventListener('click', () => dialog.close());
+  // Клик мимо окна закрывает форму. Сравнивать с рамкой самого dialog нельзя:
+  // он растянут на весь экран, и такая проверка не срабатывает никогда.
   dialog.addEventListener('click', (event) => {
-    const rect = dialog.getBoundingClientRect();
-    if (event.target === dialog && (event.clientX < rect.left || event.clientX > rect.right
-      || event.clientY < rect.top || event.clientY > rect.bottom)) dialog.close();
+    if (!event.target.closest('.contact-inner')) dialog.close();
   });
   dialog.addEventListener('close', () => {
     document.body.classList.remove('dialog-open');
