@@ -122,8 +122,7 @@ html[data-input="pointer"] .button.solid:focus-visible:not(:hover){
    из его пикселей рождаются точки, каждая пружиной держится за своё
    место. Пропорции холста — пропорции знака, иначе он терялся бы
    посреди широкой полосы. */
-.footer-word{display:block;width:min(100%,760px);margin-inline:auto;
-  aspect-ratio:800/307;height:auto}
+.footer-word{display:block;width:100%;height:clamp(140px,21vw,310px);margin:0}
 
 .footer-row{display:flex;gap:26px;justify-content:space-between;flex-wrap:wrap;align-items:flex-end;
   margin-top:clamp(18px,2.4vw,36px)}

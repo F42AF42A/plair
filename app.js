@@ -487,7 +487,10 @@
       // картинки, где есть краска, и вписываем по меньшей стороне.
       const INK_H = 307 / 374;
       const src = { w: logo.width, h: Math.round(logo.height * INK_H) };
-      const k = Math.min(ww * 0.98 / src.w, wh * 0.96 / src.h);
+      // Холст во всю ширину подвала, а знак в нём — своего размера и по
+      // центру: разлетаться частицам есть куда, но сам знак не растёт
+      // вслед за экраном.
+      const k = Math.min(Math.min(ww * 0.92, 780) / src.w, wh * 0.94 / src.h);
       const lw = src.w * k, lh = src.h * k;
       octx.drawImage(logo, 0, 0, src.w, src.h, (ww - lw) / 2, (wh - lh) / 2, lw, lh);
 
@@ -500,9 +503,11 @@
           if (data[i] < 130) continue;
           bits.push({
             hx: x, hy: y,
-            // Старт вразброс: на первом показе слово собирается из россыпи.
-            x: ww / 2 + (Math.random() - 0.5) * ww * 1.4,
-            y: wh / 2 + (Math.random() - 0.5) * wh * 3,
+            // Старт вразброс по всей полосе: знак собирается из россыпи,
+            // раскиданной на всю ширину подвала, а не из узкой полоски
+            // посередине.
+            x: Math.random() * ww,
+            y: wh / 2 + (Math.random() - 0.5) * wh * 2.6,
             vx: 0, vy: 0, a: 0.5 + Math.random() * 0.5, s: gap * 0.44
           });
         }
@@ -571,7 +576,7 @@
   const spiderHost = document.querySelector('.spider-fx');
   if (spiderHost && !reduceMotion.matches
       && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
-    import('/spider.js?v=10').then((m) => m.mount(spiderHost)).catch(() => {});
+    import('/spider.js?v=11').then((m) => m.mount(spiderHost)).catch(() => {});
   }
 
   if (!dialog || !form) return;
@@ -584,7 +589,7 @@
     botLoaded = true;
     const host = document.querySelector('.walker');
     if (!host) return;
-    import('/robot.js?v=10').then((m) => m.mount(host)).catch(() => {});
+    import('/robot.js?v=11').then((m) => m.mount(host)).catch(() => {});
   };
 
   const openers = Array.from(document.querySelectorAll('#contact-open,[data-contact-open]'));
