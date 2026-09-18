@@ -238,6 +238,10 @@
       const copies = Math.ceil(perimeter / unit) + 1;
       textPath.textContent = (RING_TEXT + SEP).repeat(copies);
       ring.dataset.unit = String(unit);
+      // Смещение всегда отрицательное. При положительном начало контура —
+      // левый верхний угол — остаётся пустым ровно на его величину, и лента
+      // там обрывается. Уехавший за начало кусок просто не рисуется.
+      textPath.setAttribute('startOffset', (-unit).toFixed(2));
     }
 
     let offset = 0, last = 0, running = false;
@@ -247,7 +251,7 @@
       const unit = Number(ring.dataset.unit) || 0;
       if (unit) {
         offset = (offset + (now - last) / 1000 * SPEED) % unit;
-        textPath.setAttribute('startOffset', offset.toFixed(2));
+        textPath.setAttribute('startOffset', (offset - unit).toFixed(2));
       }
       last = now;
       requestAnimationFrame(step);
