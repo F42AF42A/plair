@@ -24,6 +24,17 @@ window.PLAIR_CONFIG = {
 };
 window.PLAIR_CASES = [
   {
+    id: "sportivnye-vyzhivateli",
+    title: "Самые спортивные выживатели",
+    category: "PC",
+    description: "Игра про популяризацию ЗОЖ с брендом художницы Beco.",
+    media: [
+      { type: "image", src: "/assets/sportivnye-vyzhivateli-1.webp", w: 937, h: 512, alt: "Встреча с сектантом и диалоговое окно в игре «Самые спортивные выживатели»" },
+      { type: "image", src: "/assets/sportivnye-vyzhivateli-2.webp", w: 1280, h: 720, alt: "Бой с толпой противников у дома лесника в игре «Самые спортивные выживатели»" },
+      { type: "image", src: "/assets/sportivnye-vyzhivateli-3.webp", w: 1280, h: 720, alt: "Экран выбора артефакта с тремя вариантами в игре «Самые спортивные выживатели»" }
+    ]
+  },
+  {
     id: "innosim",
     title: "Инносим",
     category: "Web",
