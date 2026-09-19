@@ -143,17 +143,19 @@
                aria-label="${i + 1} из ${cases.length}: ${esc(entry.title)}">
         <article class="case-card">
           <div class="case-text">
-            <h3>${esc(entry.title)}</h3>
-            <p class="case-cat">${esc(entry.category)}</p>
-            <p class="case-desc">${esc(entry.description)}</p>
-            ${entry.note ? `<p class="case-desc">${esc(entry.note)}</p>` : ''}
+            <div class="case-copy">
+              <h3>${esc(entry.title)}</h3>
+              <p class="case-cat">${esc(entry.category)}</p>
+              <p class="case-desc">${esc(entry.description)}</p>
+              ${entry.note ? `<p class="case-desc">${esc(entry.note)}</p>` : ''}
+            </div>
             <div class="case-nav">
               <span class="case-no">${pad(i + 1)} / ${pad(cases.length)}</span>
               <button class="arrow" type="button" data-step="-1" aria-label="Предыдущий проект"
-                      aria-controls="cases"${i === 0 ? ' disabled' : ''}>
+                      aria-controls="cases">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12H4m7-7-7 7 7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
               <button class="arrow" type="button" data-step="1" aria-label="Следующий проект"
-                      aria-controls="cases"${i === cases.length - 1 ? ' disabled' : ''}>
+                      aria-controls="cases">
                 <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12h16m-7-7 7 7-7 7" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
             </div>
           </div>
@@ -215,15 +217,22 @@
 
   function goTo(index, behavior) {
     const slides = track.children;
-    if (!slides.length) return;
-    at = Math.max(0, Math.min(slides.length - 1, index));
+    const total = slides.length;
+    if (!total) return;
+    // Лента замкнута: после последнего проекта снова первый, и наоборот.
+    // Стрелки поэтому никогда не гаснут.
+    const next = ((index % total) + total) % total;
+    // Перескок через край (и прыжок по точке на другой конец ленты) делаем
+    // мгновенно: плавная прокрутка через десяток кейсов длится вечность.
+    const far = Math.abs(next - at) > 2;
+    at = next;
     const slide = slides[at];
     // Прокручиваем саму ленту, а не страницу: scrollIntoView увёл бы экран вниз.
     // Смещение считаем от самой ленты — offsetLeft отсчитывается от другого
     // предка и промахивается мимо слайда на ширину поля страницы.
     const shift = slide.getBoundingClientRect().left - track.getBoundingClientRect().left;
     track.scrollTo({ left: track.scrollLeft + shift - (track.clientWidth - slide.clientWidth) / 2,
-                     behavior: behavior || (reduceMotion.matches ? 'auto' : 'smooth') });
+                     behavior: behavior || (reduceMotion.matches || far ? 'auto' : 'smooth') });
     setActive(at);
   }
 
@@ -253,7 +262,10 @@
     const button = event.target.closest('[data-step]');
     if (button) goTo(at + Number(button.dataset.step));
   });
-  if (track) track.addEventListener('keydown', (event) => {
+  // Слушаем весь раздел, а не только ленту: после клика стрелка мыши оставляет
+  // фокус на кнопке, и нажатие клавиши до ленты бы не дошло.
+  const portfolio = document.getElementById('portfolio');
+  if (portfolio) portfolio.addEventListener('keydown', (event) => {
     if (event.key === 'ArrowLeft') { goTo(at - 1); event.preventDefault(); }
     if (event.key === 'ArrowRight') { goTo(at + 1); event.preventDefault(); }
     if (event.key === 'Home') { goTo(0); event.preventDefault(); }
@@ -609,7 +621,7 @@
   const spiderHost = document.querySelector('.spider-fx');
   if (spiderHost && !reduceMotion.matches
       && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
-    import('/spider.js?v=23').then((m) => m.mount(spiderHost)).catch(() => {});
+    import('/spider.js?v=24').then((m) => m.mount(spiderHost)).catch(() => {});
   }
 
   if (!dialog || !form) return;
@@ -622,7 +634,7 @@
     botLoaded = true;
     const host = document.querySelector('.walker');
     if (!host) return;
-    import('/robot.js?v=23').then((m) => m.mount(host)).catch(() => {});
+    import('/robot.js?v=24').then((m) => m.mount(host)).catch(() => {});
   };
 
   /* Блокировка фона с сохранением места. Тело фиксируется и сдвигается

@@ -126,16 +126,21 @@
 .arrow:hover:not(:disabled){border-color:var(--accent);background:var(--accent);color:var(--on-accent)}
 .arrow:disabled{opacity:.3;cursor:default}
 
-.carousel-track{display:flex;align-items:center;gap:clamp(14px,1.8vw,26px);
+.carousel-track{display:flex;align-items:stretch;gap:clamp(14px,1.8vw,26px);
   overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;
   scrollbar-width:none;-ms-overflow-style:none}
 .carousel-track::-webkit-scrollbar{display:none}
 .carousel-track:focus-visible{outline:2px solid var(--accent);outline-offset:6px;border-radius:var(--radius)}
 .case{flex:0 0 100%;min-width:0;scroll-snap-align:center;scroll-snap-stop:always}
-.case-card{background:linear-gradient(180deg,var(--surface),var(--bg-2));border:1px solid var(--line);
+.case-card{height:100%;background:linear-gradient(180deg,var(--surface),var(--bg-2));border:1px solid var(--line);
   border-radius:var(--radius);padding:clamp(15px,1.9vw,28px);
   display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:clamp(15px,2.2vw,34px)}
-.case-text{display:flex;flex-direction:column;justify-content:center;min-width:0}
+/* Карточки тянутся на высоту самой высокой, а навигация прижата к низу
+   текстовой колонки — так стрелки стоят на одном уровне у всех проектов и
+   не скачут при перелистывании. Сам текст при этом остаётся по центру. */
+.case-text{display:grid;grid-template-rows:1fr auto;min-width:0}
+.case-copy{align-self:center;min-width:0}
+.case-card>.tilt{align-self:center}
 .case-text h3{font-family:var(--display);font-size:clamp(25px,2.9vw,42px);font-weight:600;margin:0;
   letter-spacing:-.04em;line-height:1.02}
 .case-cat{margin-top:10px;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--dim)}
@@ -204,7 +209,14 @@ details p{margin-top:12px}
 @media (max-width:980px){
   .hero-grid{grid-template-columns:1fr}
   .hero-facts{border-left:0;border-top:1px solid var(--line);padding-left:0;padding-top:18px}
-  .case-card{grid-template-columns:1fr}
+  /* В одну колонку навигация уходит под коллаж и прижимается к низу карточки.
+     Карточки одной высоты, поэтому стрелки и здесь стоят на одном уровне.
+     display:contents распускает текстовую колонку в сетку карточки, а order
+     пропускает коллаж вперёд — в разметке он идёт после текста. */
+  .case-card{grid-template-columns:1fr;grid-template-rows:auto 1fr auto}
+  .case-text{display:contents}
+  .case-copy{align-self:start}
+  .case-nav{order:1;align-self:end}
   .service-card{grid-template-columns:auto minmax(0,1fr) auto;row-gap:7px}
   .service-card p{grid-column:2/-1}
   .studio{grid-template-columns:1fr}
