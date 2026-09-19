@@ -80,10 +80,23 @@
     if (!narrow && media.every(isTall)) return [{ items: media, cap: 430 }];
     if (narrow && media.every((m) => !isTall(m))) return media.map((m) => ({ items: [m], cap: 320 }));
     const restTall = rest.every(isTall);
-    return [
+    const rows = [
       { items: head, cap: isTall(media[0]) ? 430 : restTall ? (narrow ? 320 : 300) : (narrow ? 340 : 380) },
       { items: rest, cap: restTall ? (narrow ? 340 : 430) : 300 }
     ];
+    // На узком экране в ряд влезает не больше двух вертикальных кадров:
+    // третий ужал бы всех до марок. Разбиваем такой ряд по двое, оставляя
+    // тот же `cap`, — тогда одиночный кадр в последнем ряду выходит той же
+    // ширины, что и кадры в ряду над ним, и строй не ломается.
+    if (!narrow) return rows;
+    return rows.flatMap((row) => {
+      if (row.items.length < 3 || !row.items.every(isTall)) return [row];
+      const out = [];
+      for (let i = 0; i < row.items.length; i += 2) {
+        out.push({ items: row.items.slice(i, i + 2), cap: row.cap });
+      }
+      return out;
+    });
   }
 
   function frameHTML(item, entry, lift) {
@@ -592,7 +605,7 @@
   const spiderHost = document.querySelector('.spider-fx');
   if (spiderHost && !reduceMotion.matches
       && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
-    import('/spider.js?v=17').then((m) => m.mount(spiderHost)).catch(() => {});
+    import('/spider.js?v=18').then((m) => m.mount(spiderHost)).catch(() => {});
   }
 
   if (!dialog || !form) return;
@@ -605,7 +618,7 @@
     botLoaded = true;
     const host = document.querySelector('.walker');
     if (!host) return;
-    import('/robot.js?v=17').then((m) => m.mount(host)).catch(() => {});
+    import('/robot.js?v=18').then((m) => m.mount(host)).catch(() => {});
   };
 
   /* Блокировка фона с сохранением места. Тело фиксируется и сдвигается

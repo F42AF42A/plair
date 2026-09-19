@@ -91,7 +91,10 @@
   filter:blur(48px) saturate(.6);opacity:.3;transform:scale(1.25)}
 .collage-row{display:flex;gap:clamp(8px,.85vw,12px);width:100%;margin-inline:auto;
   max-width:calc(var(--cap) * var(--sum));transform-style:preserve-3d}
-.collage-row figure{margin:0;flex:var(--ar) 1 0;min-width:0;
+/* Доля кадра в ряду — его пропорция, делённая на сумму пропорций ряда.
+   Без деления flex-grow меньше единицы (узкий кадр — 0.46), и ряд из
+   одного вертикального кадра занимал бы меньше половины своей ширины. */
+.collage-row figure{margin:0;flex-grow:calc(var(--ar) / var(--sum));flex-shrink:1;flex-basis:0;min-width:0;
   transition:transform .35s cubic-bezier(.22,.61,.36,1)}
 .collage-row img{width:100%;height:auto;border-radius:7px;box-shadow:0 14px 34px rgba(0,0,0,.5);
   transition:box-shadow .35s ease}

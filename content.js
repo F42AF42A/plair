@@ -64,7 +64,8 @@ window.PLAIR_CASES = [
     media: [
       { type: "image", src: "/assets/2nd-chance-1.webp", w: 2000, h: 921, alt: "Постапокалиптическая локация для поиска предметов в игре 2nd Chance" },
       { type: "image", src: "/assets/2nd-chance-2.webp", w: 921, h: 2000, alt: "Карточка открытого элемента «Данные» в игре 2nd Chance" },
-      { type: "image", src: "/assets/2nd-chance-3.webp", w: 921, h: 2000, alt: "Список достижений игрока в игре 2nd Chance" }
+      { type: "image", src: "/assets/2nd-chance-3.webp", w: 921, h: 2000, alt: "Список достижений игрока в игре 2nd Chance" },
+      { type: "image", src: "/assets/2nd-chance-4.webp", w: 921, h: 2000, alt: "Сетка открытых и закрытых элементов с прогрессом 6 из 300 в игре 2nd Chance" }
     ]
   },
   {
