@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0C0E0C">
+<title>Заявка отправлена — PLAIR</title>
+<meta name="robots" content="noindex,nofollow">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/styles.css?v=25">
+<style>
+/* Страница-квитанция. Её видит форма: после отправки FormSubmit
+   перебрасывает сюда скрытый iframe, и по тому, что адрес снова наш,
+   скрипт понимает — письмо ушло. Человек попадает сюда, только если
+   отправил форму с выключенным JavaScript. */
+.thanks{min-height:100svh;display:grid;place-items:center;text-align:center;padding:24px}
+.thanks h1{font-family:var(--display);font-size:clamp(28px,5vw,52px);font-weight:600;letter-spacing:-.04em}
+.thanks p{color:var(--muted);margin-top:14px}
+.thanks .button{margin-top:28px}
+</style></head>
+<body><main class="thanks">
+  <div>
+    <h1>Заявка отправлена</h1>
+    <p>Спасибо! Прочитаем и свяжемся с вами.</p>
+    <a class="button" href="/">
+      <span class="blob" aria-hidden="true"></span><span class="f1">На главную</span>
+      <span class="f2" aria-hidden="true">На главную<svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6" stroke-linecap="round" stroke-linejoin="round"/></svg></span>
+    </a>
+  </div>
+</main></body></html>

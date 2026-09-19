@@ -621,7 +621,7 @@
   const spiderHost = document.querySelector('.spider-fx');
   if (spiderHost && !reduceMotion.matches
       && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
-    import('/spider.js?v=24').then((m) => m.mount(spiderHost)).catch(() => {});
+    import('/spider.js?v=25').then((m) => m.mount(spiderHost)).catch(() => {});
   }
 
   if (!dialog || !form) return;
@@ -634,7 +634,7 @@
     botLoaded = true;
     const host = document.querySelector('.walker');
     if (!host) return;
-    import('/robot.js?v=24').then((m) => m.mount(host)).catch(() => {});
+    import('/robot.js?v=25').then((m) => m.mount(host)).catch(() => {});
   };
 
   /* Блокировка фона с сохранением места. Тело фиксируется и сдвигается
@@ -700,23 +700,77 @@
     if (fields) fields.inert = on;
     form.setAttribute('aria-busy', String(on));
   }
-  /* FormSubmit отдаёт два разных адреса: обычный, для честной отправки
-     формы браузером (отвечает редиректом на страницу благодарности), и
-     /ajax/ — для запроса из скрипта, который единственный возвращает
-     JSON и присылает заголовки CORS. Мы шлём JSON, а адрес был записан
-     обычный: браузер блокировал ответ, fetch падал, и форма честно
-     сообщала, что отправить не удалось. Адрес приводим к нужному виду
-     здесь, чтобы старая запись в настройках больше не ломала отправку. */
+  /* Отправляем обычной формой в скрытый кадр, а не запросом из скрипта.
+     Причина: formsubmit.co не отдаёт заголовки CORS ни на одном адресе —
+     проверено, предполётный запрос возвращает 200 без
+     Access-Control-Allow-Origin. Поэтому fetch с JSON браузер до
+     сервера просто не допускал, и форма честно писала, что отправить не
+     удалось. Обычная отправка формы под это правило не подпадает.
+
+     Что письмо дошло, видно по адресу кадра: FormSubmit перебрасывает
+     его на наш `_next`, и как только адрес снова наш, его можно
+     прочитать — на чужой домен браузер посмотреть не даёт. Если за
+     отведённое время кадр так и не вернулся к нам, значит сервис
+     показал что-то своё (например требование подтвердить адрес), и мы
+     об этом честно сообщаем. */
   const formUrl = (() => {
     try {
       const url = new URL(config.formEndpoint);
-      if (config.formService === 'formsubmit' && /^formsubmit\.co$/i.test(url.hostname)
-          && !/^\/ajax\//i.test(url.pathname)) {
-        url.pathname = '/ajax' + url.pathname;
+      // На случай, если в настройках остался адрес для скриптов.
+      if (config.formService === 'formsubmit' && /^formsubmit\.co$/i.test(url.hostname)) {
+        url.pathname = url.pathname.replace(/^\/ajax\//i, '/');
       }
       return url;
     } catch { return null; }
   })();
+  const THANKS = new URL('/thanks/', location.origin).href;
+  const SEND_TIMEOUT = 25000;
+
+  // Отправка формы в скрытый кадр. Ответ — сам факт возвращения кадра
+  // на наш адрес; на всё про всё даётся SEND_TIMEOUT.
+  function postThroughFrame(fields) {
+    return new Promise((resolve) => {
+      const name = 'plair-send-' + Date.now();
+      const frame = document.createElement('iframe');
+      frame.name = name;
+      frame.setAttribute('aria-hidden', 'true');
+      frame.style.cssText = 'position:absolute;width:0;height:0;border:0;left:-9999px';
+
+      const relay = document.createElement('form');
+      relay.action = formUrl.href;
+      relay.method = 'POST';
+      relay.target = name;
+      relay.acceptCharset = 'UTF-8';
+      relay.style.display = 'none';
+      Object.entries(fields).forEach(([key, value]) => {
+        const input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = key;
+        input.value = value == null ? '' : String(value);
+        relay.appendChild(input);
+      });
+
+      let done = false;
+      const finish = (ok) => {
+        if (done) return;
+        done = true;
+        clearTimeout(timer);
+        setTimeout(() => { frame.remove(); relay.remove(); }, 0);
+        resolve(ok);
+      };
+      const timer = setTimeout(() => finish(false), SEND_TIMEOUT);
+      frame.addEventListener('load', () => {
+        // Свой адрес читается, чужой бросает исключение — этого и ждём.
+        try {
+          const here = frame.contentWindow.location.href;
+          if (here && here.indexOf(location.origin) === 0 && here.indexOf('/thanks') !== -1) finish(true);
+        } catch { /* пока у сервиса — ждём следующего перехода */ }
+      });
+
+      document.body.append(frame, relay);
+      relay.submit();
+    });
+  }
   const endpointReady = !!formUrl && formUrl.protocol === 'https:'
     && (config.formService !== 'formsubmit' || config.formActivated === true);
   const emailReady = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(config.contactEmail || '');
@@ -768,8 +822,6 @@
     status.className = 'form-status';
     showSending(true);
     const startedAt = Date.now();
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 15000);
     try {
       const payload = config.formService === 'formsubmit' ? {
         name: data.name,
@@ -779,23 +831,12 @@
         _subject: 'PLAIR — новая заявка с сайта',
         _template: 'table',
         _captcha: 'false',
+        _next: THANKS,
         _honey: data._gotcha || '',
         ...(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact) ? { email: data.contact } : {})
       } : data;
-      const response = await fetch(formUrl.href, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify(payload),
-        signal: controller.signal
-      });
-      if (!response.ok) throw new Error('Delivery failed');
-      if (config.formService === 'formsubmit') {
-        const result = await response.json();
-        if (![true, 'true'].includes(result.success)
-          || /activat|confirm your email|check your email/i.test(String(result.message || ''))) {
-          throw new Error('Submission not accepted');
-        }
-      }
+      const delivered = await postThroughFrame(payload);
+      if (!delivered) throw new Error('Submission not confirmed');
       status.textContent = 'Спасибо! Заявка отправлена. Скоро свяжемся с вами.';
       status.className = 'form-status success';
       form.reset();
@@ -815,7 +856,6 @@
         status.appendChild(link);
       }
     } finally {
-      clearTimeout(timeout);
       await wait(Math.max(0, MIN_SENDING - (Date.now() - startedAt)));
       showSending(false);
       sending = false;
