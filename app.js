@@ -444,7 +444,7 @@
   if (word && word.getContext) {
     const wctx = word.getContext('2d');
     const ACCENT2 = '52,199,89';
-    let bits = [], ww = 0, wh = 0, wdpr = 1, wptr = null, wlive = false, wprev = 0;
+    let bits = [], ww = 0, wh = 0, wdpr = 1, wptr = null, wlive = false, wprev = 0, wage = 0;
 
     // Маска знака — одна на всё: грузим её однажды и держим.
     let logoImg = null, logoTry = null;
@@ -509,20 +509,32 @@
             // а не обрывается по линейке.
             x: ww * (0.5 + (Math.random() + Math.random() + Math.random() - 1.5) * 0.44),
             y: wh * (0.5 + (Math.random() + Math.random() + Math.random() - 1.5) * 0.46),
-            vx: 0, vy: 0, a: 0.5 + Math.random() * 0.5, s: gap * 0.44
+            vx: 0, vy: 0, a: 0.5 + Math.random() * 0.5, s: gap * 0.44,
+            // У каждой точки своя жёсткость пружины: знак не защёлкивается
+            // разом, а собирается — одни частицы приходят домой раньше,
+            // другие ещё подтягиваются.
+            k: 0.007 + Math.random() * 0.009
           });
         }
       }
+      wage = 0;
       if (reduceMotion.matches) bits.forEach((b) => { b.x = b.hx; b.y = b.hy; });
     }
 
     function drawWord(dt) {
       wctx.clearRect(0, 0, ww, wh);
-      const damp = Math.pow(0.84, dt);
+      // Пружина мягче и трение выше прежнего: раньше точки долетали до
+      // места рывком, теперь подходят плавно и почти без отскока.
+      // Плюс мягкий разгон: первую секунду тяга нарастает от нуля, иначе
+      // в первый же кадр всю россыпь дёргало к знаку разом.
+      const damp = Math.pow(0.80, dt);
+      wage += dt;
+      const warm = Math.min(1, wage / 45);
+      const ease = warm * warm * (3 - 2 * warm);
       for (const b of bits) {
         if (dt) {
-          b.vx += (b.hx - b.x) * 0.055 * dt;
-          b.vy += (b.hy - b.y) * 0.055 * dt;
+          b.vx += (b.hx - b.x) * b.k * ease * dt;
+          b.vy += (b.hy - b.y) * b.k * ease * dt;
           if (wptr) {
             const dx = b.x - wptr.x, dy = b.y - wptr.y;
             const dist = Math.hypot(dx, dy);
@@ -580,7 +592,7 @@
   const spiderHost = document.querySelector('.spider-fx');
   if (spiderHost && !reduceMotion.matches
       && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
-    import('/spider.js?v=13').then((m) => m.mount(spiderHost)).catch(() => {});
+    import('/spider.js?v=16').then((m) => m.mount(spiderHost)).catch(() => {});
   }
 
   if (!dialog || !form) return;
@@ -593,7 +605,28 @@
     botLoaded = true;
     const host = document.querySelector('.walker');
     if (!host) return;
-    import('/robot.js?v=13').then((m) => m.mount(host)).catch(() => {});
+    import('/robot.js?v=16').then((m) => m.mount(host)).catch(() => {});
+  };
+
+  /* Блокировка фона с сохранением места. Тело фиксируется и сдвигается
+     вверх на текущую прокрутку — картинка не дёргается, — а при закрытии
+     прокрутка возвращается ровно туда, где человек её оставил. */
+  let lockedAt = 0;
+  const lockScroll = () => {
+    lockedAt = window.scrollY || document.documentElement.scrollTop || 0;
+    document.body.style.top = `-${lockedAt}px`;
+    document.body.classList.add('dialog-open');
+  };
+  const unlockScroll = () => {
+    document.body.classList.remove('dialog-open');
+    document.body.style.top = '';
+    // Плавную прокрутку на время возврата выключаем: у html включён
+    // scroll-behavior:smooth, и страница уезжала бы на место анимацией
+    // с нуля — человек видел бы, как сайт «долистывается» обратно.
+    const prev = root.style.scrollBehavior;
+    root.style.scrollBehavior = 'auto';
+    window.scrollTo(0, lockedAt);
+    root.style.scrollBehavior = prev;
   };
 
   const openers = Array.from(document.querySelectorAll('#contact-open,[data-contact-open]'));
@@ -601,8 +634,8 @@
   openers.forEach((button) => button.addEventListener('click', () => {
     lastOpener = button;
     loadBot();
+    lockScroll();
     dialog.showModal();
-    document.body.classList.add('dialog-open');
     // Фокус на кнопку закрытия: иначе на телефоне сразу выезжает клавиатура.
     $('contact-close').focus({ preventScroll: true });
   }));
@@ -613,7 +646,7 @@
     if (!event.target.closest('.contact-inner')) dialog.close();
   });
   dialog.addEventListener('close', () => {
-    document.body.classList.remove('dialog-open');
+    unlockScroll();
     (lastOpener || openers[0])?.focus({ preventScroll: true });
   });
 
@@ -638,12 +671,25 @@
     if (fields) fields.inert = on;
     form.setAttribute('aria-busy', String(on));
   }
-  const endpointReady = (() => {
+  /* FormSubmit отдаёт два разных адреса: обычный, для честной отправки
+     формы браузером (отвечает редиректом на страницу благодарности), и
+     /ajax/ — для запроса из скрипта, который единственный возвращает
+     JSON и присылает заголовки CORS. Мы шлём JSON, а адрес был записан
+     обычный: браузер блокировал ответ, fetch падал, и форма честно
+     сообщала, что отправить не удалось. Адрес приводим к нужному виду
+     здесь, чтобы старая запись в настройках больше не ломала отправку. */
+  const formUrl = (() => {
     try {
-      return !!config.formEndpoint && new URL(config.formEndpoint).protocol === 'https:'
-        && (config.formService !== 'formsubmit' || config.formActivated === true);
-    } catch { return false; }
+      const url = new URL(config.formEndpoint);
+      if (config.formService === 'formsubmit' && /^formsubmit\.co$/i.test(url.hostname)
+          && !/^\/ajax\//i.test(url.pathname)) {
+        url.pathname = '/ajax' + url.pathname;
+      }
+      return url;
+    } catch { return null; }
   })();
+  const endpointReady = !!formUrl && formUrl.protocol === 'https:'
+    && (config.formService !== 'formsubmit' || config.formActivated === true);
   const emailReady = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(config.contactEmail || '');
   if (!endpointReady && !emailReady) {
     status.textContent = 'Форма пока не принимает заявки.';
@@ -703,10 +749,11 @@
         message: data.project,
         _subject: 'PLAIR — новая заявка с сайта',
         _template: 'table',
+        _captcha: 'false',
         _honey: data._gotcha || '',
         ...(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact) ? { email: data.contact } : {})
       } : data;
-      const response = await fetch(config.formEndpoint, {
+      const response = await fetch(formUrl.href, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
         body: JSON.stringify(payload),
@@ -724,8 +771,20 @@
       status.className = 'form-status success';
       form.reset();
     } catch {
-      status.textContent = 'Не удалось отправить заявку. Ваш текст сохранён в форме — попробуйте ещё раз.';
+      // Заявка не должна пропадать из-за чужого сервиса: текст остаётся
+      // в форме, а рядом появляется ссылка, которая открывает письмо с
+      // уже подставленным содержимым.
+      status.textContent = 'Не удалось отправить заявку. Текст сохранён — попробуйте ещё раз или ';
       status.className = 'form-status error';
+      if (emailReady) {
+        const body = `Имя: ${data.name}\nКонтакт: ${data.contact}\n`
+          + `Примерный бюджет: ${data.budget || 'Не указан'}\n\nО проекте:\n${data.project}`;
+        const link = document.createElement('a');
+        link.href = `mailto:${config.contactEmail}?subject=${encodeURIComponent('Новый проект для PLAIR')}`
+          + `&body=${encodeURIComponent(body)}`;
+        link.textContent = 'напишите нам почтой';
+        status.appendChild(link);
+      }
     } finally {
       clearTimeout(timeout);
       await wait(Math.max(0, MIN_SENDING - (Date.now() - startedAt)));

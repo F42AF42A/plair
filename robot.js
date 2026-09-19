@@ -11,8 +11,8 @@
  * Модуль грузится лениво, при первом открытии формы: на остальных
  * страницах three.js не скачивается вовсе.
  */
-import * as THREE from '/assets/three.module.min.js?v=13';
-import { RoundedBoxGeometry } from '/assets/RoundedBoxGeometry.js?v=13';
+import * as THREE from '/assets/three.module.min.js?v=16';
+import { RoundedBoxGeometry } from '/assets/RoundedBoxGeometry.js?v=16';
 
 const ACCENT = 0x34c759;      // наш зелёный вместо #00ffc6
 const SHELL  = 0xc4c4c4;      // цвет корпуса из демо

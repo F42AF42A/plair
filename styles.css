@@ -141,9 +141,20 @@ html[data-input="pointer"] .button.solid:focus-visible:not(:hover){
 .footer small{color:var(--dim);font-size:13px}
 
 /* ── форма ─────────────────────────────────────────────────── */
-.contact-dialog{border:0;padding:0;background:none;max-width:none;max-height:none;width:100%;height:100%;
+/* Окно прибито к экрану, а не к странице. По умолчанию dialog
+   позиционируется абсолютно, то есть от начала документа: если открыть
+   форму, пролистав страницу вниз, окно оказывается у самого верха
+   документа — за пределами экрана. На десктопе это не бросалось в
+   глаза, потому что блокировка прокрутки заодно отматывала страницу
+   наверх; на телефоне прокрутка остаётся на месте, и форма просто
+   пропадала из виду. */
+.contact-dialog{position:fixed;inset:0;border:0;padding:0;background:none;
+  max-width:none;max-height:none;width:100%;height:100%;height:100dvh;
   overflow:auto;overscroll-behavior:contain}
-.contact-dialog[open]{display:grid;place-items:center}
+/* safe center: если форма выше экрана, центрирование не должно срезать
+   её верх — тогда она просто прижимается к началу и листается. */
+.contact-dialog[open]{display:flex;justify-content:center;align-items:center;
+  align-items:safe center;padding-block:16px}
 .contact-dialog::backdrop{background:rgba(4,6,4,.82);backdrop-filter:blur(6px)}
 .contact-inner{width:min(760px,calc(100% - 2*var(--gutter)));margin-block:auto;background:var(--bg-2);color:var(--ink);
   border:1px solid var(--line-2);border-radius:var(--radius);padding:clamp(20px,3vw,44px);
@@ -183,6 +194,8 @@ html[data-input="pointer"] .button.solid:focus-visible:not(:hover){
 .form-bottom:has(.form-status:not(:empty)) .walker{opacity:0}
 .form-status{font-size:14px;color:var(--muted);margin:0}
 .form-status.error{color:var(--danger)}
+.form-status a{text-decoration:underline;text-underline-offset:3px}
+.form-status a:hover{color:var(--accent)}
 .form-status.success{color:var(--accent)}
 .honeypot{position:absolute;left:-9999px;width:1px;height:1px;overflow:hidden}
 
@@ -218,7 +231,11 @@ html[data-input="pointer"] .button.solid:focus-visible:not(:hover){
 @keyframes cube-float{from{transform:translateY(6px)}to{transform:translateY(-10px)}}
 @keyframes plinth-pulse{from{opacity:.55}to{opacity:1}}
 
-body.dialog-open{overflow:hidden}
+/* Фон под окном не должен листаться. Одного overflow:hidden мало: на
+   iOS он прокрутку не держит, а в Chrome сбрасывает её в ноль, и после
+   закрытия человек оказывается в начале страницы. Тело фиксируем и
+   сдвигаем на текущую прокрутку — app.js потом возвращает её обратно. */
+body.dialog-open{position:fixed;left:0;right:0;width:100%;overflow:hidden}
 
 /* ── заставка ──────────────────────────────────────────────── */
 @property --intro-r{syntax:'<length>';inherits:false;initial-value:0px}
