@@ -24,6 +24,18 @@ window.PLAIR_CONFIG = {
 };
 window.PLAIR_CASES = [
   {
+    id: "gaica",
+    title: "GAICA",
+    category: "Хакатон / платформа",
+    description: "Международный кибер-турнир для разработчиков по созданию игровых ИИ-агентов.",
+    note: "250 участников из 3 стран, финал на РВФ.",
+    media: [
+      { type: "image", src: "/assets/gaica-1.webp", w: 1600, h: 1067, alt: "Награждение победителей хакатона «GAICA: игровая арена ИИ» на сцене" },
+      { type: "image", src: "/assets/gaica-2.webp", w: 1600, h: 1067, alt: "Участники GAICA на пуфах смотрят трансляцию матчей ИИ-агентов" },
+      { type: "image", src: "/assets/gaica-3.webp", w: 1600, h: 1067, alt: "Призы GAICA в виде гаек на стенде турнира" }
+    ]
+  },
+  {
     id: "game-open-lab",
     title: "Game Open Lab",
     category: "Ивент",

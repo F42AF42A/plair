@@ -609,7 +609,7 @@
   const spiderHost = document.querySelector('.spider-fx');
   if (spiderHost && !reduceMotion.matches
       && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
-    import('/spider.js?v=22').then((m) => m.mount(spiderHost)).catch(() => {});
+    import('/spider.js?v=23').then((m) => m.mount(spiderHost)).catch(() => {});
   }
 
   if (!dialog || !form) return;
@@ -622,7 +622,7 @@
     botLoaded = true;
     const host = document.querySelector('.walker');
     if (!host) return;
-    import('/robot.js?v=22').then((m) => m.mount(host)).catch(() => {});
+    import('/robot.js?v=23').then((m) => m.mount(host)).catch(() => {});
   };
 
   /* Блокировка фона с сохранением места. Тело фиксируется и сдвигается
