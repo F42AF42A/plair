@@ -24,6 +24,50 @@ window.PLAIR_CONFIG = {
 };
 window.PLAIR_CASES = [
   {
+    id: "game-open-lab",
+    title: "Game Open Lab",
+    category: "Ивент",
+    description: "Всероссийская лаборатория и игрофицированный геймджем.",
+    note: "500 участников, 160 проектов, 30 топовых экспертов и блогеров в жюри.",
+    media: [
+      { type: "image", src: "/assets/game-open-lab-1.webp", w: 1280, h: 853, alt: "Общее фото участников Game Open Lab с дипломами на фоне экрана GOL Direct" },
+      { type: "image", src: "/assets/game-open-lab-2.webp", w: 1280, h: 853, alt: "Паблик-ток «Будущее игровой индустрии» в полном зале на Game Open Lab" },
+      { type: "image", src: "/assets/game-open-lab-3.webp", w: 1280, h: 853, alt: "Рабочая зона геймджема с командами за компьютерами на Game Open Lab" }
+    ]
+  },
+  {
+    id: "travel-quest",
+    title: "Travel Quest",
+    category: "Mobile",
+    description: "AR-паззл с квестами для изучения городов.",
+    media: [
+      { type: "image", src: "/assets/travel-quest-1.webp", w: 701, h: 623, alt: "Карта с точкой квеста и список заданий в приложении Travel Quest" },
+      { type: "image", src: "/assets/travel-quest-2.webp", w: 657, h: 582, alt: "Сканирование QR-кода в городе и японский кроссворд в приложении Travel Quest" },
+      { type: "image", src: "/assets/travel-quest-3.webp", w: 663, h: 592, alt: "Экраны завершения квеста с промокодом и новым персонажем в приложении Travel Quest" }
+    ]
+  },
+  {
+    id: "tehnopark",
+    title: "Геймификация технопарка",
+    category: "Web",
+    description: "Разработка системы геймификации технопарков Иннополиса.",
+    media: [
+      { type: "image", src: "/assets/tehnopark-1.webp", w: 1280, h: 853, alt: "Технопарк Иннополиса с высоты птичьего полёта с подсвеченными секторами направлений" },
+      { type: "image", src: "/assets/tehnopark-2.webp", w: 1280, h: 853, alt: "Схема уровней участника с наградами и значками в системе геймификации технопарка" }
+    ]
+  },
+  {
+    id: "hotlime",
+    title: "Hotlime",
+    category: "PC",
+    description: "Аркадный PvP-экшен для 2–4 игроков.",
+    media: [
+      { type: "image", src: "/assets/hotlime-1.webp", w: 1280, h: 720, alt: "Взрыв в офисе и двое игроков на карте в игре Hotlime" },
+      { type: "image", src: "/assets/hotlime-2.webp", w: 1280, h: 720, alt: "Перестрелка во дворе с разбросанным оружием в игре Hotlime" },
+      { type: "image", src: "/assets/hotlime-3.webp", w: 1280, h: 720, alt: "Схватка в офисных помещениях в игре Hotlime" }
+    ]
+  },
+  {
     id: "sportivnye-vyzhivateli",
     title: "Самые спортивные выживатели",
     category: "PC",

@@ -78,7 +78,11 @@
     const head = media.slice(0, 1), rest = media.slice(1);
     if (!rest.length) return [{ items: head, cap: isTall(media[0]) ? 460 : 420 }];
     if (!narrow && media.every(isTall)) return [{ items: media, cap: 430 }];
-    if (narrow && media.every((m) => !isTall(m))) return media.map((m) => ({ items: [m], cap: 320 }));
+    // На узком экране в свою строку кадр уходит не только когда он широкий,
+    // но и когда близок к квадрату: пара почти квадратных скриншотов в одной
+    // строке даёт по 150 px на кадр, а в них мелкий интерфейс.
+    const isPortrait = (item) => ratio(item) < 0.9;
+    if (narrow && !media.some(isPortrait)) return media.map((m) => ({ items: [m], cap: 320 }));
     const restTall = rest.every(isTall);
     const rows = [
       { items: head, cap: isTall(media[0]) ? 430 : restTall ? (narrow ? 320 : 300) : (narrow ? 340 : 380) },
@@ -605,7 +609,7 @@
   const spiderHost = document.querySelector('.spider-fx');
   if (spiderHost && !reduceMotion.matches
       && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
-    import('/spider.js?v=18').then((m) => m.mount(spiderHost)).catch(() => {});
+    import('/spider.js?v=22').then((m) => m.mount(spiderHost)).catch(() => {});
   }
 
   if (!dialog || !form) return;
@@ -618,7 +622,7 @@
     botLoaded = true;
     const host = document.querySelector('.walker');
     if (!host) return;
-    import('/robot.js?v=18').then((m) => m.mount(host)).catch(() => {});
+    import('/robot.js?v=22').then((m) => m.mount(host)).catch(() => {});
   };
 
   /* Блокировка фона с сохранением места. Тело фиксируется и сдвигается
