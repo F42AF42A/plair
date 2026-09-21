@@ -38,8 +38,8 @@
    почтой на contactEmail с уже подставленным текстом. */
 window.PLAIR_CONFIG = {
   formService: "telegram",
-  telegramToken: "",
-  telegramChat: "",
+  telegramToken: "8738576498:AAGXel2LGXr8yemNVak7TsSd2fmsOtuTgC0",
+  telegramChat: "876305",
   // Запасной путь: им форма пользуется, если отправка не прошла.
   contactEmail: "fazullin@me.com"
 };
