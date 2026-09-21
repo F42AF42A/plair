@@ -621,7 +621,7 @@
   const spiderHost = document.querySelector('.spider-fx');
   if (spiderHost && !reduceMotion.matches
       && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
-    import('/spider.js?v=25').then((m) => m.mount(spiderHost)).catch(() => {});
+    import('/spider.js?v=26').then((m) => m.mount(spiderHost)).catch(() => {});
   }
 
   if (!dialog || !form) return;
@@ -634,7 +634,7 @@
     botLoaded = true;
     const host = document.querySelector('.walker');
     if (!host) return;
-    import('/robot.js?v=25').then((m) => m.mount(host)).catch(() => {});
+    import('/robot.js?v=26').then((m) => m.mount(host)).catch(() => {});
   };
 
   /* Блокировка фона с сохранением места. Тело фиксируется и сдвигается
@@ -760,11 +760,15 @@
       };
       const timer = setTimeout(() => finish(false), SEND_TIMEOUT);
       frame.addEventListener('load', () => {
-        // Свой адрес читается, чужой бросает исключение — этого и ждём.
-        try {
-          const here = frame.contentWindow.location.href;
-          if (here && here.indexOf(location.origin) === 0 && here.indexOf('/thanks') !== -1) finish(true);
-        } catch { /* пока у сервиса — ждём следующего перехода */ }
+        // Успехом считаем только возврат на наш `_next`: свой адрес
+        // читается, чужой бросает исключение. Соблазнительно засчитывать
+        // и любой чужой адрес в кадре — мол, сервис что-то ответил, —
+        // но тогда за успех сойдёт и страница с ошибкой, и сорванное
+        // соединение. Проверено: при обрыве сети кадр ведёт себя так же,
+        // как при ответе сервиса, и отличить их изнутри нельзя.
+        let here = null;
+        try { here = frame.contentWindow.location.href; } catch { return; }
+        if (here && here.indexOf(location.origin) === 0 && here.indexOf('/thanks') !== -1) finish(true);
       });
 
       document.body.append(frame, relay);

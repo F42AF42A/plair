@@ -156,9 +156,13 @@ html[data-input="pointer"] .button.solid:focus-visible:not(:hover){
 .contact-dialog[open]{display:flex;justify-content:center;align-items:center;
   align-items:safe center;padding-block:16px}
 .contact-dialog::backdrop{background:rgba(4,6,4,.82);backdrop-filter:blur(6px)}
+/* overflow:hidden здесь не ради прокрутки: экран отправки размывает фон
+   через backdrop-filter, а размытая область у браузеров прямоугольная и
+   собственное скругление её не обрезает — по углам карточки вылезали
+   квадратные заплатки. Обрезка на самой карточке убирает их. */
 .contact-inner{width:min(760px,calc(100% - 2*var(--gutter)));margin-block:auto;background:var(--bg-2);color:var(--ink);
   border:1px solid var(--line-2);border-radius:var(--radius);padding:clamp(20px,3vw,44px);
-  display:flex;flex-direction:column;gap:20px}
+  overflow:hidden;display:flex;flex-direction:column;gap:20px}
 .contact-top{display:flex;justify-content:space-between;align-items:center;font-size:12px;
   letter-spacing:.18em;color:var(--muted)}
 .close-button{width:44px;height:44px;border:1px solid var(--line-2);border-radius:50%;background:none;
@@ -206,7 +210,8 @@ html[data-input="pointer"] .button.solid:focus-visible:not(:hover){
 .contact-inner{position:relative}
 .sending{display:none}
 .sending.is-on{position:absolute;inset:0;z-index:5;display:grid;place-content:center;justify-items:center;
-  gap:30px;border-radius:inherit;background:color-mix(in srgb,var(--bg-2) 90%,transparent);backdrop-filter:blur(4px)}
+  gap:30px;border-radius:var(--radius);overflow:hidden;
+  background:color-mix(in srgb,var(--bg-2) 90%,transparent);backdrop-filter:blur(4px)}
 .cube-scene{position:relative;width:150px;height:150px;perspective:560px;display:grid;place-items:center}
 .cube-lift{transform-style:preserve-3d;animation:cube-float 2.3s ease-in-out infinite alternate}
 .cube{--s:52px;position:relative;width:var(--s);height:var(--s);transform-style:preserve-3d;
