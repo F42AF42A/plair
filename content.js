@@ -13,13 +13,34 @@
 
    Видео: { type: "video", src: "/assets/name.mp4", poster: "assets/poster.webp", alt: "Описание" }
    Сначала положите файл, потом добавляйте запись. */
+/* Куда уходят заявки из формы.
+
+   Сейчас — в Telegram-бота. Два значения ниже пустые: впишите их сюда
+   сами, они нигде больше не нужны.
+
+   telegramToken — выдаёт @BotFather в Telegram: напишите ему /newbot,
+     он пришлёт строку вида 1234567890:AA... Это ключ от бота.
+   telegramChat  — куда бот пишет. Свой id узнаёте у @userinfobot;
+     для группы — добавьте туда бота и возьмите id группы (с минусом).
+     Боту нужно хотя бы раз написать самому, иначе он не сможет
+     ответить первым — таково правило Telegram.
+
+   Важно: файл лежит на сайте открыто, и токен из него виден любому, кто
+   откроет исходный код страницы. Чужой человек с этим токеном сможет
+   писать от имени бота и читать адресованные боту сообщения. Поэтому
+   заводите бота только под эту форму и никуда больше его не пускайте;
+   если токен утечёт — /revoke у @BotFather, и старый перестанет
+   работать. Чтобы токен вообще не показывался, его нужно держать на
+   своей стороне — небольшой скрипт-прослойка, который зовёт Telegram
+   вместо браузера.
+
+   Пока оба поля пустые, форма не ломается: она предложит написать
+   почтой на contactEmail с уже подставленным текстом. */
 window.PLAIR_CONFIG = {
-  // FormSubmit needs its first-ever submission confirmed by email before it starts
-  // delivering silently — see the note sent alongside this change.
-  formService: "formsubmit",
-  formEndpoint: "https://formsubmit.co/fazullin@me.com",
-  formActivated: true,
-  // Fallback used only while formActivated is false.
+  formService: "telegram",
+  telegramToken: "",
+  telegramChat: "",
+  // Запасной путь: им форма пользуется, если отправка не прошла.
   contactEmail: "fazullin@me.com"
 };
 window.PLAIR_CASES = [

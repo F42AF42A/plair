@@ -621,7 +621,7 @@
   const spiderHost = document.querySelector('.spider-fx');
   if (spiderHost && !reduceMotion.matches
       && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
-    import('/spider.js?v=26').then((m) => m.mount(spiderHost)).catch(() => {});
+    import('/spider.js?v=27').then((m) => m.mount(spiderHost)).catch(() => {});
   }
 
   if (!dialog || !form) return;
@@ -634,7 +634,7 @@
     botLoaded = true;
     const host = document.querySelector('.walker');
     if (!host) return;
-    import('/robot.js?v=26').then((m) => m.mount(host)).catch(() => {});
+    import('/robot.js?v=27').then((m) => m.mount(host)).catch(() => {});
   };
 
   /* Блокировка фона с сохранением места. Тело фиксируется и сдвигается
@@ -700,83 +700,56 @@
     if (fields) fields.inert = on;
     form.setAttribute('aria-busy', String(on));
   }
-  /* Отправляем обычной формой в скрытый кадр, а не запросом из скрипта.
-     Причина: formsubmit.co не отдаёт заголовки CORS ни на одном адресе —
-     проверено, предполётный запрос возвращает 200 без
-     Access-Control-Allow-Origin. Поэтому fetch с JSON браузер до
-     сервера просто не допускал, и форма честно писала, что отправить не
-     удалось. Обычная отправка формы под это правило не подпадает.
+  /* Заявки уходят в Telegram-бота.
 
-     Что письмо дошло, видно по адресу кадра: FormSubmit перебрасывает
-     его на наш `_next`, и как только адрес снова наш, его можно
-     прочитать — на чужой домен браузер посмотреть не даёт. Если за
-     отведённое время кадр так и не вернулся к нам, значит сервис
-     показал что-то своё (например требование подтвердить адрес), и мы
-     об этом честно сообщаем. */
-  const formUrl = (() => {
+     Запрос идёт прямо из браузера посетителя: Bot API отвечает с
+     заголовком, разрешающим обращение с чужого домена, поэтому ответ
+     читается и видно точно — приняли заявку или нет. Никаких догадок по
+     скрытым кадрам, как это было с почтовым сервисом.
+
+     Токен и чат лежат в настройках (content.js) и намеренно не зашиты
+     сюда: их вписывает владелец сайта. Пока их нет, форма работает
+     запасным путём — предлагает написать почтой. */
+  const tg = config.formService === 'telegram'
+    ? { token: String(config.telegramToken || '').trim(), chat: String(config.telegramChat || '').trim() }
+    : null;
+
+  const escTg = (value) => String(value == null ? '' : value)
+    .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+  async function sendToTelegram(data) {
+    const lines = [
+      '<b>Заявка с сайта PLAIR</b>',
+      '',
+      `<b>Имя:</b> ${escTg(data.name)}`,
+      `<b>Контакт:</b> ${escTg(data.contact)}`,
+      `<b>Бюджет:</b> ${escTg(data.budget || 'не указан')}`,
+      '',
+      '<b>О проекте:</b>',
+      escTg(data.project)
+    ];
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 20000);
     try {
-      const url = new URL(config.formEndpoint);
-      // На случай, если в настройках остался адрес для скриптов.
-      if (config.formService === 'formsubmit' && /^formsubmit\.co$/i.test(url.hostname)) {
-        url.pathname = url.pathname.replace(/^\/ajax\//i, '/');
-      }
-      return url;
-    } catch { return null; }
-  })();
-  const THANKS = new URL('/thanks/', location.origin).href;
-  const SEND_TIMEOUT = 25000;
-
-  // Отправка формы в скрытый кадр. Ответ — сам факт возвращения кадра
-  // на наш адрес; на всё про всё даётся SEND_TIMEOUT.
-  function postThroughFrame(fields) {
-    return new Promise((resolve) => {
-      const name = 'plair-send-' + Date.now();
-      const frame = document.createElement('iframe');
-      frame.name = name;
-      frame.setAttribute('aria-hidden', 'true');
-      frame.style.cssText = 'position:absolute;width:0;height:0;border:0;left:-9999px';
-
-      const relay = document.createElement('form');
-      relay.action = formUrl.href;
-      relay.method = 'POST';
-      relay.target = name;
-      relay.acceptCharset = 'UTF-8';
-      relay.style.display = 'none';
-      Object.entries(fields).forEach(([key, value]) => {
-        const input = document.createElement('input');
-        input.type = 'hidden';
-        input.name = key;
-        input.value = value == null ? '' : String(value);
-        relay.appendChild(input);
+      const response = await fetch(`https://api.telegram.org/bot${encodeURIComponent(tg.token)}/sendMessage`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          chat_id: tg.chat,
+          text: lines.join('\n'),
+          parse_mode: 'HTML',
+          disable_web_page_preview: true
+        }),
+        signal: controller.signal
       });
-
-      let done = false;
-      const finish = (ok) => {
-        if (done) return;
-        done = true;
-        clearTimeout(timer);
-        setTimeout(() => { frame.remove(); relay.remove(); }, 0);
-        resolve(ok);
-      };
-      const timer = setTimeout(() => finish(false), SEND_TIMEOUT);
-      frame.addEventListener('load', () => {
-        // Успехом считаем только возврат на наш `_next`: свой адрес
-        // читается, чужой бросает исключение. Соблазнительно засчитывать
-        // и любой чужой адрес в кадре — мол, сервис что-то ответил, —
-        // но тогда за успех сойдёт и страница с ошибкой, и сорванное
-        // соединение. Проверено: при обрыве сети кадр ведёт себя так же,
-        // как при ответе сервиса, и отличить их изнутри нельзя.
-        let here = null;
-        try { here = frame.contentWindow.location.href; } catch { return; }
-        if (here && here.indexOf(location.origin) === 0 && here.indexOf('/thanks') !== -1) finish(true);
-      });
-
-      document.body.append(frame, relay);
-      relay.submit();
-    });
+      const result = await response.json().catch(() => null);
+      return !!(response.ok && result && result.ok === true);
+    } finally {
+      clearTimeout(timeout);
+    }
   }
-  const endpointReady = !!formUrl && formUrl.protocol === 'https:'
-    && (config.formService !== 'formsubmit' || config.formActivated === true);
+
+  const endpointReady = !!tg && !!tg.token && !!tg.chat;
   const emailReady = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(config.contactEmail || '');
   if (!endpointReady && !emailReady) {
     status.textContent = 'Форма пока не принимает заявки.';
@@ -827,20 +800,8 @@
     showSending(true);
     const startedAt = Date.now();
     try {
-      const payload = config.formService === 'formsubmit' ? {
-        name: data.name,
-        contact: data.contact,
-        budget: data.budget || 'Не указан',
-        message: data.project,
-        _subject: 'PLAIR — новая заявка с сайта',
-        _template: 'table',
-        _captcha: 'false',
-        _next: THANKS,
-        _honey: data._gotcha || '',
-        ...(/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(data.contact) ? { email: data.contact } : {})
-      } : data;
-      const delivered = await postThroughFrame(payload);
-      if (!delivered) throw new Error('Submission not confirmed');
+      const delivered = await sendToTelegram(data);
+      if (!delivered) throw new Error('Submission not accepted');
       status.textContent = 'Спасибо! Заявка отправлена. Скоро свяжемся с вами.';
       status.className = 'form-status success';
       form.reset();
