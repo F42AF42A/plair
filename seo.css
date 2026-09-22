@@ -28,17 +28,44 @@
 .ticker-row span{font-family:var(--display);font-size:clamp(15px,1.9vw,26px);font-weight:300;letter-spacing:-.03em;
   color:var(--dim);display:flex;align-items:center;gap:44px;white-space:nowrap}
 .ticker-row span::after{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:.8;flex:none}
-/* Движение, которое началось само и длится дольше пяти секунд, обязано иметь
-   способ остановки: кнопка, наведение и фокус — три разных способа. */
-.ticker:hover .ticker-row,.ticker:focus-within .ticker-row,.ticker[data-paused] .ticker-row{animation-play-state:paused}
+/* Движение, которое началось само и длится дольше пяти секунд, обязано
+   иметь способ остановки: кнопка и наведение — два разных способа.
+   Наведение слушает только сама лента: будь это вся полоса, кнопка
+   «пуск» не отпускала бы её, пока с неё не уведут курсор. */
+.ticker-view:hover .ticker-row,.ticker[data-paused] .ticker-row{animation-play-state:paused}
 .ticker-stop{flex:none;width:44px;height:44px;margin-right:6px;display:grid;place-items:center;background:none;
   border:0;border-left:1px solid var(--line);color:var(--dim);cursor:pointer;transition:color .2s}
 .ticker-stop:hover{color:var(--ink)}
 .ticker-stop svg{width:13px;height:13px;fill:currentColor}
 .ticker-stop .i-play{display:none}
-.ticker[data-paused] .ticker-stop .i-play{display:block}
-.ticker[data-paused] .ticker-stop .i-pause{display:none}
+[data-paused] .ticker-stop .i-play{display:block}
+[data-paused] .ticker-stop .i-pause{display:none}
 @keyframes ticker-slide{to{transform:translateX(-50%)}}
+
+/* ── «Нас выбрали»: лента логотипов ─────────────────────────
+   Тёмная полоса перед подвалом. Лента собрана из двух одинаковых
+   половин и едет ровно на половину своей ширины — стык незаметен.
+   Чтобы половина была именно половиной, отступ между логотипами
+   висит на самом логотипе (margin-right), а не на строке (gap):
+   иначе последний промежуток выпадает из расчёта и лента дёргается.  */
+.clients{background:var(--bg-2);border-block:1px solid var(--line);
+  margin-inline:calc(-1*var(--gutter));padding-block:clamp(28px,3.6vw,46px)}
+.clients-head{padding-inline:var(--gutter);margin:0 0 clamp(18px,2.2vw,28px)}
+.logo-strip{display:flex;align-items:center}
+.logo-view{flex:1;overflow:hidden;min-width:0;padding-block:6px;
+  -webkit-mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+  mask:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+/* Никаких отступов на самой строке: сдвиг на 50% считается от всей её
+   ширины, и лишний padding увёл бы стык на половину этого отступа. */
+.logo-row{--logo-gap:clamp(48px,7vw,108px);
+  display:flex;align-items:center;width:max-content;
+  animation:ticker-slide 46s linear infinite}
+.logo-row img{display:block;flex:none;width:auto;height:clamp(24px,3.1vw,38px);
+  margin-right:var(--logo-gap);opacity:.7;transition:opacity .25s}
+.logo-view:hover .logo-row img{opacity:.92}
+.logo-view:hover .logo-row,.logo-strip[data-paused] .logo-row{animation-play-state:paused}
+/* Кнопка встаёт по той же вертикали, что и заголовок слева. */
+.logo-strip .ticker-stop{border-left:0;margin-right:max(0px,calc(var(--gutter) - 14px))}
 
 /* ── секции ────────────────────────────────────────────────── */
 .editorial-section{padding-block:clamp(48px,7vw,110px)}
@@ -224,6 +251,13 @@ details p{margin-top:12px}
 @media (prefers-reduced-motion:reduce){
   .ticker-row{animation:none}
   .ticker-stop{display:none}
+  /* Логотипы не едут — вторая половина ленты лишняя, а первая
+     становится обычной строкой с переносом. */
+  .logo-view{-webkit-mask:none;mask:none}
+  .logo-row{animation:none;width:auto;flex-wrap:wrap;justify-content:center;
+    padding-left:0;row-gap:clamp(18px,2.6vw,30px)}
+  .logo-row img[data-dupe]{display:none}
+  .logo-row img{margin-inline:calc(var(--logo-gap) / 2)}
   .carousel-track{scroll-behavior:auto}
   .service-card{transition:none}
 }

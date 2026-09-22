@@ -128,8 +128,12 @@ html[data-input="pointer"] .button.solid:focus-visible:not(:hover){
    его за серую линию сверху и за строку ссылок снизу, а занимаемая
    высота остаётся прежней. Курсор он не перехватывает — иначе перекрыл
    бы ссылки подвала; координаты берём из окна. */
-.footer-word{display:block;width:100%;--bleed:clamp(50px,7vw,120px);
-  height:calc(clamp(190px,28vw,410px) + var(--bleed) * 2);
+/* --bleed объявлен через @property, чтобы скрипт мог прочитать его
+   уже посчитанным в пикселях: он вписывает знак в полосу без этой
+   прибавки, а разлёт частиц считает вместе с ней. */
+@property --bleed{syntax:"<length>";inherits:false;initial-value:0px}
+.footer-word{display:block;width:100%;--bleed:clamp(24px,7vw,120px);
+  height:calc(clamp(160px,28vw,410px) + var(--bleed) * 2);
   margin-block:calc(-1 * var(--bleed));pointer-events:none}
 
 .footer-row{position:relative;z-index:1;

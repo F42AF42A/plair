@@ -282,12 +282,40 @@
     const line = cases.map((entry) => `<span>${esc(entry.title)}</span>`).join('');
     tickerRow.innerHTML = line + line;
   }
-  if (ticker && tickerStop) {
-    tickerStop.addEventListener('click', () => {
-      const paused = ticker.toggleAttribute('data-paused');
-      tickerStop.setAttribute('aria-pressed', String(paused));
-      tickerStop.setAttribute('aria-label', paused ? 'Запустить бегущую строку' : 'Остановить бегущую строку');
+  // Кнопка «стоп» одинаково устроена у строки с проектами и у ленты
+  // логотипов, поэтому обработчик один на двоих.
+  const wireStop = (box, button, what) => {
+    if (!box || !button) return;
+    button.addEventListener('click', () => {
+      const paused = box.toggleAttribute('data-paused');
+      button.setAttribute('aria-pressed', String(paused));
+      button.setAttribute('aria-label', `${paused ? 'Запустить' : 'Остановить'} ${what}`);
     });
+  };
+  wireStop(ticker, tickerStop, 'бегущую строку');
+
+  /* ── «Нас выбрали»: лента логотипов ─────────────────────────
+     Логотипы лежат в content.js и уже приведены к одному серому:
+     страница их не перекрашивает, чтобы разноцветные исходники не
+     спорили друг с другом. Ряд печатается дважды — вторая половина
+     помечена data-dupe, при «уменьшить движение» она прячется. */
+  const clients = Array.isArray(window.PLAIR_CLIENTS) ? window.PLAIR_CLIENTS : [];
+  const logoRow = $('logo-row');
+  const logoStrip = $('logo-strip');
+  const clientsBox = document.getElementById('clients');
+  if (clientsBox && !clients.length) {
+    clientsBox.remove();
+  } else if (logoRow && clients.length) {
+    const half = (dupe) => clients.map((c) => (
+      `<img src="${esc(c.src)}" alt="" width="${Number(c.w) || 0}" height="${Number(c.h) || 0}"` +
+      ` loading="lazy" decoding="async"${dupe ? ' data-dupe' : ''}>`
+    )).join('');
+    logoRow.innerHTML = half(false) + half(true);
+
+    const list = $('clients-list');
+    if (list) list.innerHTML = clients.map((c) => `<li>${esc(c.name)}</li>`).join('');
+
+    wireStop(logoStrip, $('logo-stop'), 'ленту логотипов');
   }
 
   const fx = $('hero-fx');
@@ -516,15 +544,30 @@
       // картинки, где есть краска, и вписываем по меньшей стороне.
       const INK_H = 307 / 374;
       const src = { w: logo.width, h: Math.round(logo.height * INK_H) };
+      // Холст выпущен за свои границы отрицательными полями — на эту
+      // прибавку (--bleed) и разлетаются частицы. Сам знак вписывается
+      // не в холст, а в полосу между серой линией и ссылками, иначе на
+      // узком экране он вылезал бы за линию.
+      const css = parseFloat(getComputedStyle(word).getPropertyValue('--bleed'));
+      const bleed = Number.isFinite(css) ? css : Math.max(24, Math.min(innerWidth * 0.07, 120));
+      const band = Math.max(80, wh - bleed * 2);
       // Холст во всю ширину подвала, а знак в нём — своего размера и по
       // центру: разлетаться частицам есть куда, но сам знак не растёт
-      // вслед за экраном.
-      const k = Math.min(Math.min(ww * 0.92, 780) / src.w, wh * 0.94 / src.h);
+      // вслед за экраном. На телефоне поля шире: там знак во всю ширину
+      // упирался в края экрана.
+      const maxW = ww < 700 ? ww * 0.74 : Math.min(ww * 0.92, 780);
+      const k = Math.min(maxW / src.w, band * 0.92 / src.h);
       const lw = src.w * k, lh = src.h * k;
       octx.drawImage(logo, 0, 0, src.w, src.h, (ww - lw) / 2, (wh - lh) / 2, lw, lh);
 
       const data = octx.getImageData(0, 0, off.width, off.height).data;
       const gap = ww < 700 ? 3 : 4;
+      // Наибольший отлёт частицы от центра. Сумма трёх случайных чисел
+      // даёт размах от −1,5 до 1,5, поэтому делим на 1,5: иначе облако
+      // начиналось бы далеко за холстом и на телефоне выглядело так,
+      // будто логотип не помещается в экран.
+      const outX = ww * 0.46 / 1.5;
+      const outY = (band * 0.5 + bleed * 0.7) / 1.5;
       bits = [];
       for (let y = 0; y < wh; y += gap) {
         for (let x = 0; x < ww; x += gap) {
@@ -536,8 +579,8 @@
             // колоколом: сумма трёх случайных чисел сгущает россыпь к
             // середине и разрежает её к краям области — облако тает,
             // а не обрывается по линейке.
-            x: ww * (0.5 + (Math.random() + Math.random() + Math.random() - 1.5) * 0.44),
-            y: wh * (0.5 + (Math.random() + Math.random() + Math.random() - 1.5) * 0.46),
+            x: ww * 0.5 + outX * (Math.random() + Math.random() + Math.random() - 1.5),
+            y: wh * 0.5 + outY * (Math.random() + Math.random() + Math.random() - 1.5),
             vx: 0, vy: 0, a: 0.5 + Math.random() * 0.5, s: gap * 0.44,
             // У каждой точки своя жёсткость пружины: знак не защёлкивается
             // разом, а собирается — одни частицы приходят домой раньше,
@@ -621,7 +664,7 @@
   const spiderHost = document.querySelector('.spider-fx');
   if (spiderHost && !reduceMotion.matches
       && window.matchMedia('(hover:hover) and (pointer:fine)').matches) {
-    import('/spider.js?v=28').then((m) => m.mount(spiderHost)).catch(() => {});
+    import('/spider.js?v=27').then((m) => m.mount(spiderHost)).catch(() => {});
   }
 
   if (!dialog || !form) return;
@@ -634,7 +677,7 @@
     botLoaded = true;
     const host = document.querySelector('.walker');
     if (!host) return;
-    import('/robot.js?v=28').then((m) => m.mount(host)).catch(() => {});
+    import('/robot.js?v=27').then((m) => m.mount(host)).catch(() => {});
   };
 
   /* Блокировка фона с сохранением места. Тело фиксируется и сдвигается
