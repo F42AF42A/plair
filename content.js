@@ -58,17 +58,6 @@ window.PLAIR_CONFIG = {
 window.PLAIR_CLIENTS = [];
 window.PLAIR_CASES = [
   {
-    id: "math-road",
-    title: "Путь к универу",
-    category: "Web",
-    description: "Раннер на внимательность с математическими задачками.",
-    media: [
-      { type: "image", src: "/assets/math-road-1.webp", w: 2000, h: 1143, alt: "Заставка игры «Путь к универу»: ровер на городской улице и кнопка «Поехали»" },
-      { type: "image", src: "/assets/math-road-2.webp", w: 2000, h: 1143, alt: "Ровер едет к кубикам с ответами на пример «21 + 11» в игре «Путь к универу»" },
-      { type: "image", src: "/assets/math-road-3.webp", w: 2000, h: 1143, alt: "Экран итога с набранными баллами после заезда в игре «Путь к универу»" }
-    ]
-  },
-  {
     id: "gaica",
     title: "GAICA",
     category: "Хакатон / платформа",
@@ -78,6 +67,17 @@ window.PLAIR_CASES = [
       { type: "image", src: "/assets/gaica-1.webp", w: 1600, h: 1067, alt: "Награждение победителей хакатона «GAICA: игровая арена ИИ» на сцене" },
       { type: "image", src: "/assets/gaica-2.webp", w: 1600, h: 1067, alt: "Участники GAICA на пуфах смотрят трансляцию матчей ИИ-агентов" },
       { type: "image", src: "/assets/gaica-3.webp", w: 1600, h: 1067, alt: "Призы GAICA в виде гаек на стенде турнира" }
+    ]
+  },
+  {
+    id: "math-road",
+    title: "Путь к универу",
+    category: "Web",
+    description: "Раннер на внимательность с математическими задачками.",
+    media: [
+      { type: "image", src: "/assets/math-road-1.webp", w: 2000, h: 1143, alt: "Заставка игры «Путь к универу»: ровер на городской улице и кнопка «Поехали»" },
+      { type: "image", src: "/assets/math-road-2.webp", w: 2000, h: 1143, alt: "Ровер едет к кубикам с ответами на пример «21 + 11» в игре «Путь к универу»" },
+      { type: "image", src: "/assets/math-road-3.webp", w: 2000, h: 1143, alt: "Экран итога с набранными баллами после заезда в игре «Путь к универу»" }
     ]
   },
   {
